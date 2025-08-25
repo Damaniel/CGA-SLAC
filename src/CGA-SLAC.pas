@@ -1,0 +1,5 @@
+program CGASLAC;
+
+begin
+
+end.
