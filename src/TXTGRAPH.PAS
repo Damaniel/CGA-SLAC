@@ -133,6 +133,8 @@ procedure tg_rectangle(sx,sy,ex,ey:integer; color:byte);
 
 procedure tg_tile3(x,y,tile:byte);
 procedure tg_tile5(x,y,tile:byte);
+procedure tg_tile7(x,y,tile:byte);
+procedure tg_tile9(x,y,tile:byte);
 
 procedure tg_writeChar(x,y,chr,color,bgColor:byte; data:pFontData);
 procedure tg_writeCharBg(x,y,digit,color,bgColor:byte; data:pFontData);
@@ -151,6 +153,8 @@ procedure buffer_show4x3(x,y:byte);           { dest -> display, 8x8 byte-bound 
 procedure buffer_show8x6(x,y:byte);            { dest -> display, 8x8 byte-bound }
 procedure buffer_tile3(x,y,tile:byte);  { tile -> dest }
 procedure buffer_tile5(x,y,tile:byte);  { tile -> dest }
+procedure buffer_tile7(x,y,tile:byte);
+procedure buffer_tile9(x,y,tile:byte);
 procedure buffer_nullTile4x3(x,y:byte);        { erase source buffer section }
 procedure buffer_hideSprites;
 
@@ -897,6 +901,146 @@ asm
 	mov ds,dx
 end;
 
+procedure tg_tile7(x,y,tile:byte); assembler;
+asm
+	{ set video address for STOSW }
+	mov  ax,$B800
+	mov  es,ax
+
+	mov  ah,y
+	xor  al,al
+	shr  ax,1
+	mov  di,ax
+	shr  ax,1
+	shr  ax,1
+	add  di,ax
+
+	mov  cl,x
+	xor  ch,ch
+	add  di,cx
+	or   di,1
+
+	{ calculate tile offset }
+	xor  ax,ax
+	mov  al,tile
+	mov  bx,112
+	mul  bx
+	and  cx,1
+	jnz  @oddtile
+	add  ax,56
+@oddTile:
+	mov  dx,ds
+	lds  si,tileSource
+	add  si,ax
+
+	mov  cx,7
+	mov  bx,153
+
+@tileLoop:
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	add  di,bx
+
+	loop @tileLoop
+
+	mov ds,dx
+end;
+
+procedure tg_tile9(x,y,tile:byte); assembler;
+asm
+	{ set video address for STOSW }
+	mov  ax,$B800
+	mov  es,ax
+
+	mov  ah,y
+	xor  al,al
+	shr  ax,1
+	mov  di,ax
+	shr  ax,1
+	shr  ax,1
+	add  di,ax
+
+	mov  cl,x
+	xor  ch,ch
+	add  di,cx
+	or   di,1
+
+	{ calculate tile offset }
+	xor  ax,ax
+	mov  al,tile
+	mov  bx,180
+	mul  bx
+	and  cx,1
+	jnz  @oddtile
+	add  ax,90
+@oddTile:
+	mov  dx,ds
+	lds  si,tileSource
+	add  si,ax
+
+	mov  cx,9
+	mov  bx,151
+
+@tileLoop:
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+	inc di
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	add  di,bx
+
+	loop @tileLoop
+
+	mov ds,dx
+end;
+
 procedure tg_writeChar(x,y,chr,color,bgColor:byte; data:pFontData); assembler;
 { bgColor IGNORED! }
 asm
@@ -1379,6 +1523,143 @@ asm
 { I'm NOT unrolling this one! }
 
 @loop:
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	add  di,bx
+
+	loop @loop
+
+	mov ds,dx
+end;
+
+{
+	draws a 7x7 tile to the dest buffer
+}
+procedure buffer_tile7(x,y,tile:byte); assembler;
+asm
+	{ set video address for STOSW }
+	mov  ah,y
+	xor  al,al
+	shr  ax,1  { =*128 }
+	mov  bx,ax
+	shr  ax,1
+	shr  ax,1  { =*32 }
+	add  bx,ax
+	mov  al,x
+	xor  ah,ah
+	mov  cx,ax { cx holds x }
+	add  bx,ax
+	shr  bx,1  { bx holds *80 }
+	les  di,destBuffer
+	add  di,bx
+
+	{ calculate tile offset }
+	xor  ax,ax
+	mov  al,tile
+	mov  bx,112
+	mul  bx
+	and  cx,1
+	jnz  @oddtile
+	add  ax,56
+@oddTile:
+	mov  dx,ds
+	lds  si,tileSource
+	add  si,ax
+
+	mov  cx,7
+	mov  bx,$004C
+
+@loop:
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	add  di,bx
+
+	loop @loop
+
+	mov ds,dx
+end;
+
+{
+	draws a 9x9 tile to the dest buffer
+}
+procedure buffer_tile9(x,y,tile:byte); assembler;
+asm
+	{ set video address for STOSW }
+	mov  ah,y
+	xor  al,al
+	shr  ax,1  { =*128 }
+	mov  bx,ax
+	shr  ax,1
+	shr  ax,1  { =*32 }
+	add  bx,ax
+	mov  al,x
+	xor  ah,ah
+	mov  cx,ax { cx holds x }
+	add  bx,ax
+	shr  bx,1  { bx holds *80 }
+	les  di,destBuffer
+	add  di,bx
+
+	{ calculate tile offset }
+	xor  ax,ax
+	mov  al,tile
+	mov  bx,180
+	mul  bx
+	and  cx,1
+	jnz  @oddtile
+	add  ax,90
+@oddTile:
+	mov  dx,ds
+	lds  si,tileSource
+	add  si,ax
+
+	mov  cx,9
+	mov  bx,$004B
+
+@loop:
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
+
+	lodsw
+	and  ah,es:[di]
+	or   al,ah
+	stosb
 
 	lodsw
 	and  ah,es:[di]
