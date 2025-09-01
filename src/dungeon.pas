@@ -34,6 +34,16 @@ DungeonGenType=record
    connected: array[0..5] of Byte;
 end;
 
+DungeonGenerator=object
+   procedure Init;
+   procedure generate;
+
+   private
+      dungeon_rooms: array[0..DUNGEON_GEN_NOM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
+      procedure create_room(region_x: Integer; region_y: Integer);
+      procedure connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
+end;
+
 { DungeonSquareType - the content of a single carved square of the dungeon}
 DungeonSquareType=record
    flags: Byte;
@@ -41,8 +51,8 @@ DungeonSquareType=record
    item_uid: Shortint;
 end;
 
-DungeonType=object
-   squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+{ SLACDungeon - the complete carved dungeon }
+SLACDungeon=object
    procedure Init;
    procedure initialize_square(x: Integer; y: Integer);
    procedure add_enemy(x: Integer; y: Integer; uid: Integer);
@@ -54,17 +64,52 @@ DungeonType=object
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
    procedure create_from_gen_data;
-end;
 
-var
-{ The structure that holds the generated room and connection data for the current
-   dungeon floor.  This will be converted to a full carved dungeon after generation. }
-g_dungeon_rooms: array[0..DUNGEON_GEN_NOM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
+   private
+      squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+end;
 
 implementation
 
+{ ------------------------------------------------------------------------------------------------- }
+{ DungeonGenerator                                                                                  }
+{ ------------------------------------------------------------------------------------------------- }
+
 { Init : Initialization function }
-procedure DungeonType.Init;
+procedure DungeonGenerator.Init;
+begin
+end;
+
+{ generate : generates a dungeon (rooms and connections) }
+procedure DungeonGenerator.generate;
+begin
+end;
+
+{ create_room : adds a room to a region in the dungeon
+
+  Parameters:
+    region_x, region_y : the region to place the room
+}
+procedure DungeonGenerator.create_room(region_x: Integer; region_y: Integer);
+begin
+end;
+
+{ connect_rooms : joins two rooms by marking them as connected in the source and target room structs
+
+  Parameters:
+    region_x1, region_y1 : the source room region
+    region_x2, region_y2 : the destination room region
+}
+procedure DungeonGenerator.connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
+begin
+end;
+
+{ ------------------------------------------------------------------------------------------------- }
+{ SLACDungeon                                                                                       }
+{ ------------------------------------------------------------------------------------------------- }
+
+{ Init : Initialization function }
+procedure SLACDungeon.Init;
 var
    x: Integer;
    y: Integer;
@@ -83,7 +128,7 @@ end;
   Parameters:
     x, y : the position of the square to initialize
 }
-procedure DungeonType.initialize_square(x: Integer; y: Integer);
+procedure SLACDungeon.initialize_square(x: Integer; y: Integer);
 begin
    squares[x][y].flags := $00;
    squares[x][y].enemy_uid := NOTHING;
@@ -96,7 +141,7 @@ end;
     x, y : the position of the square to modify
     uid : the uid of the enemy in the active enemy list
 }
-procedure DungeonType.add_enemy(x: Integer; y: Integer; uid: Integer);
+procedure SLACDungeon.add_enemy(x: Integer; y: Integer; uid: Integer);
 begin
    squares[x][y].enemy_uid := uid;
 end;
@@ -107,7 +152,7 @@ end;
     x, y : the position of the square to modify
     uid : the uid of the item in the active item list
 }
-procedure DungeonType.add_item(x: Integer; y: Integer; uid: Integer);
+procedure SLACDungeon.add_item(x: Integer; y: Integer; uid: Integer);
 begin
    squares[x][y].item_uid := uid;
 end;
@@ -118,7 +163,7 @@ end;
     x, y : the location of the square to modify
     square_type : the type of the square (SQUARE_FLOOR or SQUARE_WALL)
 }
-procedure DungeonType.set_square_type(x: Integer; y: Integer; square_type: Byte);
+procedure SLACDungeon.set_square_type(x: Integer; y: Integer; square_type: Byte);
 var
    st: Byte;
 begin
@@ -133,7 +178,7 @@ end;
     x, y : the location of the square to modify
     seen : has this square been seen (and therefore should it be visible?)
 }
-procedure DungeonType.set_square_seen(x: Integer; y: Integer; seen: Boolean);
+procedure SLACDungeon.set_square_seen(x: Integer; y: Integer; seen: Boolean);
 begin
    if seen = True then
    begin
@@ -152,7 +197,7 @@ end;
   Returns:
     the type of the square (SQUARE_WALL or SQUARE_FLOOR)
 }
-function DungeonType.get_square_type(x: Integer; y: Integer) : Byte;
+function SLACDungeon.get_square_type(x: Integer; y: Integer) : Byte;
 begin
    get_square_type := squares[x][y].flags and $0F;
 end;
@@ -165,7 +210,7 @@ end;
   Returns:
     the visibility of the square (True = has been seen, False = hasn't been seen)
 }
-function DungeonType.get_square_seen(x: Integer; y: Integer) : Boolean;
+function SLACDungeon.get_square_seen(x: Integer; y: Integer) : Boolean;
 var
    seen: Byte;
 begin
@@ -187,7 +232,7 @@ end;
   Returns:
     the uid of the enemy on the square, or NOTHING if no enemy is present
 }
-function DungeonType.get_enemy(x: Integer; y: Integer) : Shortint;
+function SLACDungeon.get_enemy(x: Integer; y: Integer) : Shortint;
 begin
    get_enemy := squares[x][y].enemy_uid;
 end;
@@ -200,7 +245,7 @@ end;
   Returns:
     the uid of the item on the square, or NOTHING if no item is present
 }
-function DungeonType.get_item(x: Integer; y: Integer) : Shortint;
+function SLACDungeon.get_item(x: Integer; y: Integer) : Shortint;
 begin
    get_item := squares[x][y]. item_uid;
 end;
@@ -210,7 +255,7 @@ end;
    Parameters:
       None (Note: the data is pulled from g_dungeon_rooms)
 }
-procedure DungeonType.create_from_gen_data;
+procedure SLACDungeon.create_from_gen_data;
 begin
 end;
 

@@ -9,7 +9,7 @@ uses
 
 var
   { The main dungeon. }
-  g_dungeon: DungeonType;
+  g_dungeon: SLACDungeon;
 
 begin
   g_dungeon.Init;
