@@ -10,8 +10,9 @@ interface
 
 const
    { The square types that a particular dungeon square can have }
-   SQUARE_WALL = 0;
-   SQUARE_FLOOR = 1;
+   SQUARE_VOID = 0;
+   SQUARE_WALL = 1;
+   SQUARE_FLOOR = 2;
 
    { A generic 'nothing' value for enemy and item uids }
    NOTHING = -1;
@@ -21,9 +22,10 @@ const
    DUNGEON_HEIGHT = 60;
    DUNGEON_GEN_NUM_ROWS = 5;
    DUNGEON_GEN_NUM_COLS = 5;
-   SECTOR_WIDTH = DUNGEON_WIDTH div DUNGEON_GEN_NUM_COLS;
-   SECTOR_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
-   MIN_ROOM_SIZE = 4;
+   REGION_WIDTH = DUNGEON_WIDTH div DUNGEON_GEN_NUM_COLS;
+   REGION_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
+   MIN_ROOM_WIDTH = 3;
+   MIN_ROOM_HEIGHT = 3;
 
    { The maximum number of connections a room can have to other rooms }
    MAX_CONNECTIONS = 6;
@@ -44,6 +46,7 @@ DungeonGenerator=object
 
    procedure Init;
    procedure generate;
+   procedure get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
    procedure create_room(region_x: Integer; region_y: Integer);
    procedure connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
 end;
@@ -52,6 +55,7 @@ end;
 {DungeonGenerator=object
    procedure Init;
    procedure generate;
+   procedure get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
 
    private
       dungeon_rooms: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
@@ -79,9 +83,12 @@ SLACDungeon=object
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
    procedure create_from_gen_data(var gen: DungeonGenerator);
+   procedure dump;
 
    private
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+      procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
+                                    var room_x: Integer; var room_y: Integer);
 end;
 
 var
@@ -116,7 +123,25 @@ end;
 
 { generate : generates a dungeon (rooms and connections) }
 procedure DungeonGenerator.generate;
+var
+   region_x: Integer;
+   region_y: Integer;
 begin
+   { Generate a room in every region }
+   for region_y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
+   begin
+      for region_x := 0 to DUNGEON_GEN_NUM_COLS - 1 do
+      begin
+         create_room(region_x, region_y);
+      end;
+   end;
+
+   { Iterate through the regions and connect them together }
+end;
+
+procedure DungeonGenerator.get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
+begin
+   region := dungeon_rooms[region_x][region_y];
 end;
 
 { create_room : adds a room to a region in the dungeon
@@ -145,29 +170,40 @@ begin
      maximal space while still allowing room for walls. }
 
    { Create the width of the room }
-   rand_range := (SECTOR_WIDTH - 2) - MIN_ROOM_SIZE + 1;
-   room_width := Random(rand_range) + MIN_ROOM_SIZE;
+   rand_range := (REGION_WIDTH - 2) - MIN_ROOM_WIDTH + 1;
+   room_width := Random(rand_range) + MIN_ROOM_WIDTH;
 
    { Create the height of the room }
-   rand_range := (SECTOR_HEIGHT - 2) - MIN_ROOM_SIZE + 1;
-   room_height := Random(rand_range) + MIN_ROOM_SIZE;
+   rand_range := (REGION_HEIGHT - 2) - MIN_ROOM_HEIGHT + 1;
+   room_height := Random(rand_range) + MIN_ROOM_HEIGHT;
 
-   { Pick a room position that places the entire room within the range of 1..SECTOR_WIDTH-1 in both dimensions. }
+   { Pick a room position that places the entire room within the range of 1..SECTOR_WIDTH-1 in both dimensions
+     and place it randomly within the region.  Note that adjacent rooms may not connect directly to each other
+     with a straight passage; we'll punt on the passage creation until we carve out the final dungeon. }
 
    { Start with the width }
    min_pos := 1;
-   max_pos := (SECTOR_WIDTH - 2) - room_width + 1;
+   max_pos := (REGION_WIDTH - 2) - room_width + 1;
    room_x := Random(max_pos - min_pos) + min_pos;
 
    { Then the height }
    min_pos := 1;
-   max_pos := (SECTOR_HEIGHT - 2) - room_height + 1;
+   max_pos := (REGION_HEIGHT - 2) - room_height + 1;
    room_y := Random(max_pos - min_pos) + min_pos;
 
    dungeon_rooms[region_x][region_y].room_x := room_x;
    dungeon_rooms[region_x][region_y].room_y := room_y;
    dungeon_rooms[region_x][region_y].room_width := room_width;
    dungeon_rooms[region_x][region_y].room_height := room_height;
+
+   Write('Created room of size ');
+   Write(dungeon_rooms[region_x][region_y].room_width);
+   Write(' x ');
+   Write(dungeon_rooms[region_x][region_y].room_height);
+   Write(' at ');
+   Write(dungeon_rooms[region_x][region_y].room_x);
+   Write(',');
+   Writeln(dungeon_rooms[region_x][region_y].room_y);
 end;
 
 { connect_rooms : joins two rooms by marking them as connected in the source and target room structs
@@ -377,13 +413,89 @@ end;
       gen: A DungeonGenerator instance
 }
 procedure SLACDungeon.create_from_gen_data(var gen: DungeonGenerator);
+var
+   { The region to pull the generator/room info from }
+   region_x: Integer;
+   region_y: Integer;
+   { The counters used to carve rooms into the dungeon }
+   idx_x: Integer;
+   idx_y: Integer;
+   { The position of the upper left corner of the room to carve }
+   offset_x: Integer;
+   offset_y: Integer;
+   { A reference to a single region, used to extract room data for the region }
+   region: DungeonGenType;
 begin
+
    { Carve the rooms out of the base dungeon}
+   for region_y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
+   begin
+      for region_x := 0 to DUNGEON_GEN_NUM_COLS - 1 do
+      begin
+         { Get a reference to the region}
+         gen.get_region(region_x, region_y, region);
+         { Get the room position and calculate the dungeon offset from it.
+           Note that the offsets start one to the left / above the actual room area and
+           the index ranges end one to the right / below the room area.  This allows us to draw
+           the walls around the room more easily. }
+         offset_x := region_x * REGION_WIDTH + region.room_x - 1;
+         offset_y := region_y * REGION_HEIGHT + region.room_y - 1;
+         { Loop through the appropriate region in the dungeon and carve the room}
+         for idx_y := offset_y to offset_y + region.room_height do
+         begin
+            for idx_x := offset_x to offset_x + region.room_width do
+            begin
+               { If a left or right wall, set the square type to wall }
+               if (idx_x = offset_x) or (idx_x = offset_x + region.room_width) then
+               begin
+                  set_square_type(idx_x, idx_y, SQUARE_WALL);
+               end
+               { If a top or bottom wall, set the square type to wall }
+               else if (idx_y = offset_y) or (idx_y = offset_y + region.room_height) then
+               begin
+                  set_square_type(idx_x, idx_y, SQUARE_WALL);
+               end
+               else begin
+                  set_square_type(idx_x, idx_y, SQUARE_FLOOR);
+               end;
+            end;
+         end;
+      end;
+   end;
 
    { Generate a list of unique connections between rooms - i.e. flatten the connected
      lists into a single list with no duplicate connections }
 
    { Carve connections between each pair of connected rooms }
+end;
+
+{ dump - debug function that prints a copy of the dungeon to the console.}
+procedure SLACDungeon.dump;
+var
+   x: Integer;
+   y: Integer;
+begin
+   for y := 0 to DUNGEON_HEIGHT - 1 do
+   begin
+      for x := 0 to DUNGEON_WIDTH - 1 do
+      begin
+         case get_square_type(x, y) of
+            SQUARE_VOID: Write('.');
+            SQUARE_WALL: Write('#');
+            SQUARE_FLOOR: Write(' ');
+         end;
+      end;
+      Writeln('');
+   end;
+end;
+
+{ get_random_room_pos - returns a random position within the region specified by (x1,y1)-(x2,y2).
+
+}
+procedure SLACDungeon.get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
+                                          var room_x: Integer; var room_y: Integer);
+begin
+
 end;
 
 end.

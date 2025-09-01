@@ -12,5 +12,7 @@ var
 begin
   Randomize;
   g_generator.Init;
-  g_generator.create_room(0, 0);
+  g_generator.generate;
+  g_dungeon.create_from_gen_data(g_generator);
+  g_dungeon.dump;
 end.
