@@ -125,12 +125,15 @@ procedure tg_term;
 
 procedure tg_clear(color:byte);
 
+
 procedure tg_putPixel(x,y,color:byte);
 function tg_getPixel(x,y:byte):byte;
 
+{ procedures to draw lines and filled rectangles, respectively }
 procedure tg_bar(sx,sy,ex,ey:integer; color:byte);
 procedure tg_rectangle(sx,sy,ex,ey:integer; color:byte);
 
+{ Procedures to render tiles of different sizes directly to the screen }
 procedure tg_tile3(x,y,tile:byte);
 procedure tg_tile5(x,y,tile:byte);
 procedure tg_tile7(x,y,tile:byte);
