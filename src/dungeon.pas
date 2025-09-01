@@ -22,6 +22,7 @@ const
    DUNGEON_HEIGHT = 60;
    DUNGEON_GEN_NUM_ROWS = 5;
    DUNGEON_GEN_NUM_COLS = 5;
+   NUM_REGIONS = DUNGEON_GEN_NUM_ROWS * DUNGEON_GEN_NUM_COLS;
    REGION_WIDTH = DUNGEON_WIDTH div DUNGEON_GEN_NUM_COLS;
    REGION_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
    MIN_ROOM_WIDTH = 3;
@@ -31,6 +32,13 @@ const
    MAX_CONNECTIONS = 6;
 
 type
+
+{ A list of neighbors}
+NeighborType=record
+   num_neighbors: Byte;
+   neighbors: array[0..3] of Byte;
+end;
+
 { DungeonGenType - the content of a single region of the generated dungeon}
 DungeonGenType=record
    room_x: Byte;
@@ -41,27 +49,22 @@ DungeonGenType=record
    num_connected: Byte;
 end;
 
+{ TODO : Do the encapsulation once the generator is done }
 DungeonGenerator=object
    dungeon_rooms: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
 
    procedure Init;
    procedure generate;
-   procedure get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
-   procedure create_room(region_x: Integer; region_y: Integer);
-   procedure connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
+   procedure get_region(region_idx: Integer; var region: DungeonGenType);
+   procedure create_room(region_idx: Integer);
+   procedure connect_rooms(from_region: Integer; to_region: Integer);
+   procedure get_neighbors(region: Integer; var neighbors: NeighborType);
+   function get_random_unconnected_neighbor(region: Integer) : Integer;
+   function get_random_connected_neighbor(region: Integer) : Integer;
+   procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
+   function xy_to_region(x: Integer; y: Integer) : Integer;
+
 end;
-
-{ TODO: This is the encapsulated version of the class.  The one above is just for temporary testing }
-{DungeonGenerator=object
-   procedure Init;
-   procedure generate;
-   procedure get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
-
-   private
-      dungeon_rooms: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
-      procedure create_room(region_x: Integer; region_y: Integer);
-      procedure connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
-end;}
 
 { DungeonSquareType - the content of a single carved square of the dungeon}
 DungeonSquareType=record
@@ -126,21 +129,54 @@ procedure DungeonGenerator.generate;
 var
    region_x: Integer;
    region_y: Integer;
+   region: Integer;
+   neighbor_region: Integer;
+   connected_count: Integer;
 begin
    { Generate a room in every region }
    for region_y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
    begin
       for region_x := 0 to DUNGEON_GEN_NUM_COLS - 1 do
       begin
-         create_room(region_x, region_y);
+         region := xy_to_region(region_x, region_y);
+         create_room(region);
       end;
    end;
 
-   { Iterate through the regions and connect them together }
+   { Pick the initial spot, find random unconnected neighbors and continue until none are found. }
+   connected_count := 0;
+   region := Random(NUM_REGIONS);
+   neighbor_region := get_random_unconnected_neighbor(region);
+   while neighbor_region <> -1 do
+   begin
+      connect_rooms(region, neighbor_region);
+      connected_count := connected_count + 1;
+      region := neighbor_region;
+      neighbor_region := get_random_unconnected_neighbor(region);
+   end;
+
+   { Now, pick sequential spots until one with an already connected neighbor is found, connect them
+     and repeat until all rooms are marked as connected. }
+{   while connected_count < NUM_REGIONS do
+   begin
+      region := 0;
+      repeat
+         neighbor_region := get_random_connected_neighbor(region);
+         region := region + 1;
+      until neighbor_region <> -1;
+      connect_rooms(region, neighbor_region);
+      connected_count := connected_count + 1;
+      Writeln(connected_count);
+   end;}
+
+   { Finally, try connecting random regions that aren't already connected }
 end;
 
-procedure DungeonGenerator.get_region(region_x: Integer; region_y: Integer; var region: DungeonGenType);
+procedure DungeonGenerator.get_region(region_idx: Integer; var region: DungeonGenType);
+var
+   region_x, region_y: Integer;
 begin
+   region_to_xy(region_idx, region_x, region_y);
    region := dungeon_rooms[region_x][region_y];
 end;
 
@@ -149,8 +185,10 @@ end;
   Parameters:
     region_x, region_y : the region to place the room
 }
-procedure DungeonGenerator.create_room(region_x: Integer; region_y: Integer);
+procedure DungeonGenerator.create_room(region_idx: Integer);
 var
+   region_x: Integer;
+   region_y: Integer;
    room_width: Integer;
    room_height: Integer;
    room_x: Integer;
@@ -191,6 +229,7 @@ begin
    max_pos := (REGION_HEIGHT - 2) - room_height + 1;
    room_y := Random(max_pos - min_pos) + min_pos;
 
+   region_to_xy(region_idx, region_x, region_y);
    dungeon_rooms[region_x][region_y].room_x := room_x;
    dungeon_rooms[region_x][region_y].room_y := room_y;
    dungeon_rooms[region_x][region_y].room_width := room_width;
@@ -216,8 +255,10 @@ end;
    Those numbers represent the different regions starting from the upper left corner and moving left to right,
    top to bottom.
 }
-procedure DungeonGenerator.connect_rooms(region_x1: Integer; region_y1: Integer; region_x2: Integer; region_y2: Integer);
+procedure DungeonGenerator.connect_rooms(from_region: Integer; to_region: Integer);
 var
+   region_x1, region_y1: Integer;
+   region_x2, region_y2: Integer;
    source_index: Integer;
    dest_index: Integer;
    source_connected: Integer;
@@ -225,6 +266,8 @@ var
    already_connected: Boolean;
    idx: Integer;
 begin
+   region_to_xy(from_region, region_x1, region_y1);
+   region_to_xy(to_region, region_x2, region_y2);
    { If either the source or destination room has a spare open connection, then continue }
    if (dungeon_rooms[region_x1][region_y1].num_connected < MAX_CONNECTIONS) and
       (dungeon_rooms[region_x2][region_y2].num_connected < MAX_CONNECTIONS) then
@@ -259,6 +302,90 @@ begin
          dungeon_rooms[region_x2][region_y2].num_connected := dest_connected + 1;
       end;
    end;
+end;
+
+{ get_neighbors - given a region index, return the region indices of its neighbors.
+
+  Parameters:
+    region : the region index of the region with neighbors (y * width + x)
+    var neighbors: an list and count of neighbor region inidices.
+}
+procedure DungeonGenerator.get_neighbors(region: Integer; var neighbors: NeighborType);
+var
+   r_x: Integer;
+   r_y: Integer;
+begin
+   neighbors.num_neighbors := 0;
+
+   { Get the x,y position of the region}
+   region_to_xy(region, r_x, r_y);
+
+   { Check each of the four directions.  If a valid region, add it to the list }
+   if r_x > 0 then begin
+      neighbors.neighbors[neighbors.num_neighbors] := xy_to_region(r_x - 1, r_y);
+      neighbors.num_neighbors := neighbors.num_neighbors + 1;
+   end;
+   if r_y > 0 then begin
+      neighbors.neighbors[neighbors.num_neighbors] := xy_to_region(r_x, r_y - 1);
+      neighbors.num_neighbors := neighbors.num_neighbors + 1;
+   end;
+   if r_x < (DUNGEON_GEN_NUM_COLS - 1) then begin
+      neighbors.neighbors[neighbors.num_neighbors] := xy_to_region(r_x + 1, r_y);
+      neighbors.num_neighbors := neighbors.num_neighbors + 1;
+   end;
+   if r_y < (DUNGEON_GEN_NUM_ROWS - 1) then begin
+      neighbors.neighbors[neighbors.num_neighbors] := xy_to_region(r_x, r_y + 1);
+      neighbors.num_neighbors := neighbors.num_neighbors + 1;
+   end;
+end;
+
+{ xy_to_region - converts a region in x, y format to a single numeric value
+
+  Parameters:
+    x, y - the x, y coordinates of the target region
+    region - the combined region value
+}
+function DungeonGenerator.xy_to_region(x: Integer; y: Integer) : Integer;
+begin
+   xy_to_region := y * DUNGEON_GEN_NUM_COLS + x;
+end;
+
+{ region_to_xy - converts a region in single numeric format back to x,y format
+
+  Parameters:
+    region - the combined region value
+    x, y - the x,y coordinates of the target region
+}
+procedure DungeonGenerator.region_to_xy(region: Integer; var x: Integer; var y: Integer);
+begin
+   x := region mod DUNGEON_GEN_NUM_COLS;
+   y := region div DUNGEON_GEN_NUM_COLS;
+end;
+
+{ get_random_unconnected_neighbor - picks an adjacent region that isn't connected to any other region.
+
+   Parameters:
+      region: the current region
+
+   Returns:
+      the randomly chosen neighbor, or -1 if all neighbors are already connected
+}
+function DungeonGenerator.get_random_unconnected_neighbor(region: Integer) : Integer;
+begin
+   get_random_unconnected_neighbor := -1;
+end;
+
+{ get_random_connected_neighbor - picks an adjacent region that is connected to any other region.
+
+   Parameters:
+      region: the current region
+
+   Returns:
+      the randomly chosen neighbor, or -1 if all neigbors are unconnected
+}
+function DungeonGenerator.get_random_connected_neighbor(region: Integer) : Integer;
+begin
+   get_random_connected_neighbor := -1;
 end;
 
 { ------------------------------------------------------------------------------------------------- }
@@ -417,6 +544,7 @@ var
    { The region to pull the generator/room info from }
    region_x: Integer;
    region_y: Integer;
+   region_idx: Integer;
    { The counters used to carve rooms into the dungeon }
    idx_x: Integer;
    idx_y: Integer;
@@ -426,38 +554,34 @@ var
    { A reference to a single region, used to extract room data for the region }
    region: DungeonGenType;
 begin
-
    { Carve the rooms out of the base dungeon}
-   for region_y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
+   for region_idx := 0 to NUM_REGIONS - 1 do
    begin
-      for region_x := 0 to DUNGEON_GEN_NUM_COLS - 1 do
+      gen.get_region(region_idx, region);
+      { Get the room position and calculate the dungeon offset from it.
+         Note that the offsets start one to the left / above the actual room area and
+         the index ranges end one to the right / below the room area.  This allows us to draw
+         the walls around the room more easily. }
+      gen.region_to_xy(region_idx, region_x, region_y);
+      offset_x := region_x * REGION_WIDTH + region.room_x - 1;
+      offset_y := region_y * REGION_HEIGHT + region.room_y - 1;
+      { Loop through the appropriate region in the dungeon and carve the room}
+      for idx_y := offset_y to offset_y + region.room_height + 1do
       begin
-         { Get a reference to the region}
-         gen.get_region(region_x, region_y, region);
-         { Get the room position and calculate the dungeon offset from it.
-           Note that the offsets start one to the left / above the actual room area and
-           the index ranges end one to the right / below the room area.  This allows us to draw
-           the walls around the room more easily. }
-         offset_x := region_x * REGION_WIDTH + region.room_x - 1;
-         offset_y := region_y * REGION_HEIGHT + region.room_y - 1;
-         { Loop through the appropriate region in the dungeon and carve the room}
-         for idx_y := offset_y to offset_y + region.room_height do
+         for idx_x := offset_x to offset_x + region.room_width + 1 do
          begin
-            for idx_x := offset_x to offset_x + region.room_width do
+            { If a left or right wall, set the square type to wall }
+            if (idx_x = offset_x) or (idx_x = offset_x + region.room_width + 1) then
             begin
-               { If a left or right wall, set the square type to wall }
-               if (idx_x = offset_x) or (idx_x = offset_x + region.room_width) then
-               begin
-                  set_square_type(idx_x, idx_y, SQUARE_WALL);
-               end
-               { If a top or bottom wall, set the square type to wall }
-               else if (idx_y = offset_y) or (idx_y = offset_y + region.room_height) then
-               begin
-                  set_square_type(idx_x, idx_y, SQUARE_WALL);
-               end
-               else begin
-                  set_square_type(idx_x, idx_y, SQUARE_FLOOR);
-               end;
+               set_square_type(idx_x, idx_y, SQUARE_WALL);
+            end
+            { If a top or bottom wall, set the square type to wall }
+            else if (idx_y = offset_y) or (idx_y = offset_y + region.room_height + 1) then
+            begin
+               set_square_type(idx_x, idx_y, SQUARE_WALL);
+            end
+            else begin
+               set_square_type(idx_x, idx_y, SQUARE_FLOOR);
             end;
          end;
       end;
