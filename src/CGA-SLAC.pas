@@ -8,10 +8,9 @@ uses
   Slacutil;
 
 var
-  { The main dungeon. }
-  g_dungeon: SLACDungeon;
-  g_generator: DungeonGenerator;
-
+  count: Integer;
 begin
+  Randomize;
   g_generator.Init;
+  g_generator.create_room(0, 0);
 end.

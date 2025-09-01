@@ -10,8 +10,8 @@ interface
 
 const
    { The square types that a particular dungeon square can have }
-   SQUARE_FLOOR = 0;
-   SQUARE_WALL = 1;
+   SQUARE_WALL = 0;
+   SQUARE_FLOOR = 1;
 
    { A generic 'nothing' value for enemy and item uids }
    NOTHING = -1;
@@ -21,8 +21,9 @@ const
    DUNGEON_HEIGHT = 60;
    DUNGEON_GEN_NUM_ROWS = 5;
    DUNGEON_GEN_NUM_COLS = 5;
-   SECTOR_WIDTH = DUNGEON_WIDTH / DUNGEON_GEN_NUM_COLS;
-   SECTOR_HEIGHT = DUNGEON_WIDTH / DUNGEON_GEN_NUM_ROWS;
+   SECTOR_WIDTH = DUNGEON_WIDTH div DUNGEON_GEN_NUM_COLS;
+   SECTOR_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
+   MIN_ROOM_SIZE = 4;
 
    { The maximum number of connections a room can have to other rooms }
    MAX_CONNECTIONS = 6;
@@ -77,11 +78,16 @@ SLACDungeon=object
    function get_square_seen(x: Integer; y: Integer) : Boolean;
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
-   procedure create_from_gen_data;
+   procedure create_from_gen_data(var gen: DungeonGenerator);
 
    private
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
 end;
+
+var
+  { The main dungeon and associated generator. }
+  g_dungeon: SLACDungeon;
+  g_generator: DungeonGenerator;
 
 implementation
 
@@ -119,7 +125,49 @@ end;
     region_x, region_y : the region to place the room
 }
 procedure DungeonGenerator.create_room(region_x: Integer; region_y: Integer);
+var
+   room_width: Integer;
+   room_height: Integer;
+   room_x: Integer;
+   room_y: Integer;
+   rand_range: Integer;
+   min_pos: Integer;
+   max_pos: Integer;
 begin
+   { A room is a space inside a region.  Each dimension of the room is separate.
+     The length of width of a room must be at least 4 and at most (region size - 2).
+     The room can be anywhere in the region - connecting the rooms with passages
+     will happen later when the final dungeon is generated.
+
+     Note that the room defined here only contains the carved out floor for the room.
+     When the final dungeon is assembled, a wall will be built around the floor space.
+     This is why the maximum room dimension is (region_size - 2) - rooms can take up
+     maximal space while still allowing room for walls. }
+
+   { Create the width of the room }
+   rand_range := (SECTOR_WIDTH - 2) - MIN_ROOM_SIZE + 1;
+   room_width := Random(rand_range) + MIN_ROOM_SIZE;
+
+   { Create the height of the room }
+   rand_range := (SECTOR_HEIGHT - 2) - MIN_ROOM_SIZE + 1;
+   room_height := Random(rand_range) + MIN_ROOM_SIZE;
+
+   { Pick a room position that places the entire room within the range of 1..SECTOR_WIDTH-1 in both dimensions. }
+
+   { Start with the width }
+   min_pos := 1;
+   max_pos := (SECTOR_WIDTH - 2) - room_width + 1;
+   room_x := Random(max_pos - min_pos) + min_pos;
+
+   { Then the height }
+   min_pos := 1;
+   max_pos := (SECTOR_HEIGHT - 2) - room_height + 1;
+   room_y := Random(max_pos - min_pos) + min_pos;
+
+   dungeon_rooms[region_x][region_y].room_x := room_x;
+   dungeon_rooms[region_x][region_y].room_y := room_y;
+   dungeon_rooms[region_x][region_y].room_width := room_width;
+   dungeon_rooms[region_x][region_y].room_height := room_height;
 end;
 
 { connect_rooms : joins two rooms by marking them as connected in the source and target room structs
@@ -148,6 +196,7 @@ begin
       { Get the index of the source and destination regions }
       source_index := (region_y1 * DUNGEON_GEN_NUM_COLS) + region_x1;
       dest_index := (region_y2 * DUNGEON_GEN_NUM_ROWS) + region_x2;
+
       { these two variables are used to help make some of the following lines of code shorter }
       source_connected := dungeon_rooms[region_x1][region_y1].num_connected;
       dest_connected := dungeon_rooms[region_x2][region_y2].num_connected;
@@ -325,10 +374,16 @@ end;
 { create_from_gen_data : converts the generated dungeon map into the final dungeon struct
 
    Parameters:
-      None (Note: the data is pulled from g_dungeon_rooms)
+      gen: A DungeonGenerator instance
 }
-procedure SLACDungeon.create_from_gen_data;
+procedure SLACDungeon.create_from_gen_data(var gen: DungeonGenerator);
 begin
+   { Carve the rooms out of the base dungeon}
+
+   { Generate a list of unique connections between rooms - i.e. flatten the connected
+     lists into a single list with no duplicate connections }
+
+   { Carve connections between each pair of connected rooms }
 end;
 
 end.
