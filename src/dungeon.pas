@@ -30,6 +30,12 @@ const
 
    { The maximum number of connections a room can have to other rooms }
    MAX_CONNECTIONS = 6;
+   { The maximum number of room connections the entire dungeon can have
+     Note that a standard dungeon will have NUM_REGIONS - 1 connections,
+     but additional connections may be added later.  This number
+     greatly overestimates the total potential connection count, but
+     that's OK. }
+   MAX_TOTAL_CONNECTIONS = NUM_REGIONS * 2;
 
 type
 
@@ -39,13 +45,23 @@ NeighborType=record
    neighbors: array[0..3] of Byte;
 end;
 
+ConnectionType=record
+   source: Byte;
+   dest: Byte;
+end;
+
+ConnectionListType=record
+   num_connections: Integer;
+   connections: array[0..MAX_TOTAL_CONNECTIONS - 1] of ConnectionType;
+end;
+
 { DungeonGenType - the content of a single region of the generated dungeon}
 DungeonGenType=record
    room_x: Byte;
    room_y: Byte;
    room_width: Byte;
    room_height: Byte;
-   connected: array[0..(MAX_CONNECTIONS - 1)] of Byte;
+   connected: array[0..(MAX_CONNECTIONS - 1)] of Shortint;
    num_connected: Byte;
 end;
 
@@ -59,10 +75,11 @@ DungeonGenerator=object
    procedure create_room(region_idx: Integer);
    procedure connect_rooms(from_region: Integer; to_region: Integer);
    procedure get_neighbors(region: Integer; var neighbors: NeighborType);
+   procedure dump_connections;
    function get_random_unconnected_neighbor(region: Integer) : Integer;
    function get_random_connected_neighbor(region: Integer) : Integer;
-   procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
    function xy_to_region(x: Integer; y: Integer) : Integer;
+   procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
 
 end;
 
@@ -90,6 +107,7 @@ SLACDungeon=object
 
    private
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+      procedure generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
       procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
                                     var room_x: Integer; var room_y: Integer);
 end;
@@ -110,6 +128,7 @@ procedure DungeonGenerator.Init;
 var
    x: Integer;
    y: Integer;
+   idx: Integer;
 begin
    for x := 0 to DUNGEON_GEN_NUM_COLS - 1 do
    begin
@@ -120,6 +139,10 @@ begin
          dungeon_rooms[x][y].room_width := 0;
          dungeon_rooms[x][y].room_height := 0;
          dungeon_rooms[x][y].num_connected := 0;
+         for idx := 0 to MAX_CONNECTIONS - 1 do
+         begin
+            dungeon_rooms[x][y].connected[idx] := -1;
+         end;
       end;
    end;
 end;
@@ -132,6 +155,9 @@ var
    region: Integer;
    neighbor_region: Integer;
    connected_count: Integer;
+   idx: Integer;
+   region_found: Boolean;
+   dgt: DungeonGenType;
 begin
    { Generate a room in every region }
    for region_y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
@@ -144,7 +170,9 @@ begin
    end;
 
    { Pick the initial spot, find random unconnected neighbors and continue until none are found. }
-   connected_count := 0;
+   { Note: the inital spot is connected to the first room it finds, so we'll start the count at
+     1 so the counts line up correctly. }
+   connected_count := 1;
    region := Random(NUM_REGIONS);
    neighbor_region := get_random_unconnected_neighbor(region);
    while neighbor_region <> -1 do
@@ -154,20 +182,38 @@ begin
       region := neighbor_region;
       neighbor_region := get_random_unconnected_neighbor(region);
    end;
-
-   { Now, pick sequential spots until one with an already connected neighbor is found, connect them
-     and repeat until all rooms are marked as connected. }
-{   while connected_count < NUM_REGIONS do
+   { Now, pick sequential regions until an unconnected one with an already connected neighbor is found.
+     Connect them and repeat until all regions are marked as connected. }
+   idx := 0;
+   while (connected_count < NUM_REGIONS) do
    begin
+      idx := idx + 1;
       region := 0;
+      region_found := False;
       repeat
-         neighbor_region := get_random_connected_neighbor(region);
-         region := region + 1;
-      until neighbor_region <> -1;
-      connect_rooms(region, neighbor_region);
-      connected_count := connected_count + 1;
-      Writeln(connected_count);
-   end;}
+         get_region(region, dgt);
+         { Is this region unconnected? }
+         if dgt.num_connected = 0 then begin
+            { An unconnected region was found.  Get any connected neighbors }
+            neighbor_region := get_random_connected_neighbor(region);
+            { If any connected neighbor was found, connect the room, increment the connected count
+              and end the loop }
+            if neighbor_region <> -1 then begin
+               connect_rooms(region, neighbor_region);
+               connected_count := connected_count + 1;
+               region_found := True;
+            end
+            { Otherwise, just continue the search with the next region }
+            else begin
+               region := region + 1;
+            end;
+         end
+         else begin
+            { This region is connected; continue the search with the next region. }
+            region := region + 1;
+         end;
+      until (region_found = True) or (region >= NUM_REGIONS);
+   end;
 
    { Finally, try connecting random regions that aren't already connected }
 end;
@@ -234,15 +280,6 @@ begin
    dungeon_rooms[region_x][region_y].room_y := room_y;
    dungeon_rooms[region_x][region_y].room_width := room_width;
    dungeon_rooms[region_x][region_y].room_height := room_height;
-
-   Write('Created room of size ');
-   Write(dungeon_rooms[region_x][region_y].room_width);
-   Write(' x ');
-   Write(dungeon_rooms[region_x][region_y].room_height);
-   Write(' at ');
-   Write(dungeon_rooms[region_x][region_y].room_x);
-   Write(',');
-   Writeln(dungeon_rooms[region_x][region_y].room_y);
 end;
 
 { connect_rooms : joins two rooms by marking them as connected in the source and target room structs
@@ -286,9 +323,12 @@ begin
       already_connected := False;
       for idx := 0 to MAX_CONNECTIONS - 1 do
       begin
-         if dungeon_rooms[region_x1][region_y1].connected[idx] = dest_index then
+         if dungeon_rooms[region_x1][region_y1].connected[idx] <> -1 then
          begin
-            already_connected := True;
+            if dungeon_rooms[region_x1][region_y1].connected[idx] = dest_index then
+            begin
+               already_connected := True;
+            end;
          end;
       end;
 
@@ -371,8 +411,29 @@ end;
       the randomly chosen neighbor, or -1 if all neighbors are already connected
 }
 function DungeonGenerator.get_random_unconnected_neighbor(region: Integer) : Integer;
+var
+   num_candidates: Integer;
+   candidates: array[0..3] of Byte;
+   neighbors: NeighborType;
+   dgt: DungeonGenType;
+   idx: Integer;
 begin
-   get_random_unconnected_neighbor := -1;
+   num_candidates := 0;
+   get_neighbors(region, neighbors);
+   for idx := 0 to neighbors.num_neighbors - 1 do
+   begin
+      get_region(neighbors.neighbors[idx], dgt);
+      if dgt.num_connected = 0 then begin
+         candidates[num_candidates] := neighbors.neighbors[idx];
+         num_candidates := num_candidates + 1;
+      end;
+   end;
+   if num_candidates = 0 then begin
+      get_random_unconnected_neighbor := -1;
+   end
+   else begin
+      get_random_unconnected_neighbor := candidates[Random(num_candidates)];
+   end;
 end;
 
 { get_random_connected_neighbor - picks an adjacent region that is connected to any other region.
@@ -384,8 +445,49 @@ end;
       the randomly chosen neighbor, or -1 if all neigbors are unconnected
 }
 function DungeonGenerator.get_random_connected_neighbor(region: Integer) : Integer;
+var
+   num_candidates: Integer;
+   candidates: array[0..3] of Byte;
+   neighbors: NeighborType;
+   dgt: DungeonGenType;
+   idx: Integer;
 begin
-   get_random_connected_neighbor := -1;
+   num_candidates := 0;
+   get_neighbors(region, neighbors);
+   for idx := 0 to neighbors.num_neighbors - 1 do
+   begin
+      get_region(neighbors.neighbors[idx], dgt);
+      if dgt.num_connected <> 0 then begin
+         candidates[num_candidates] := neighbors.neighbors[idx];
+         num_candidates := num_candidates + 1;
+      end;
+   end;
+   if num_candidates = 0 then begin
+      get_random_connected_neighbor := -1;
+   end
+   else begin
+      get_random_connected_neighbor := candidates[Random(num_candidates)];
+   end;
+end;
+
+procedure DungeonGenerator.dump_connections;
+var
+   region, idx: Integer;
+   dgt: DungeonGenType;
+begin
+   for region := 0 to NUM_REGIONS - 1 do
+   begin
+      get_region(region, dgt);
+      Write('Region ');
+      Write(region);
+      Write(': connections - ');
+      for idx := 0 to dgt.num_connected - 1 do
+      begin
+         Write(dgt.connected[idx]);
+         Write(' ');
+      end;
+      Writeln('');
+   end;
 end;
 
 { ------------------------------------------------------------------------------------------------- }
@@ -593,11 +695,40 @@ begin
    { Carve connections between each pair of connected rooms }
 end;
 
+{ generate_unique_connection_list - takes the collection of connections from each region and
+  generates a list containing only unique connections.,
+
+  We'll do this by iterating through every region, and only append source/destination pairs
+  where the destination region is larger than the source region}
+procedure SLACDungeon.generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
+var
+   idx: Integer;
+   idx2: Integer;
+   dgt: DungeonGenType;
+begin
+   clist.num_connections := 0;
+
+   for idx := 0 to NUM_REGIONS - 1 do
+   begin
+      gen.get_region(idx, dgt);
+      for idx2 :=0 to dgt.num_connected - 1 do
+      begin
+         if dgt.connected[idx2] > idx then
+         begin
+            clist.connections[clist.num_connections].source := idx;
+            clist.connections[clist.num_connections].dest := dgt.connected[idx2];
+            clist.num_connections := clist.num_connections + 1;
+         end;
+      end;
+   end;
+end;
+
 { dump - debug function that prints a copy of the dungeon to the console.}
 procedure SLACDungeon.dump;
 var
    x: Integer;
    y: Integer;
+   clist: ConnectionListType;
 begin
    for y := 0 to DUNGEON_HEIGHT - 1 do
    begin
@@ -610,6 +741,18 @@ begin
          end;
       end;
       Writeln('');
+   end;
+
+   generate_unique_connection_list(g_generator, clist);
+   Write('A total of ');
+   Write(clist.num_connections);
+   Writeln(' unique connections were made:');
+   for x := 0 to clist.num_connections - 1 do
+   begin
+      Write(' - region ');
+      Write(clist.connections[x].source);
+      Write(' to region ');
+      Writeln(clist.connections[x].dest);
    end;
 end;
 
