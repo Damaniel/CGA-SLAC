@@ -7,10 +7,6 @@ uses
   Dungeon,
   Slacutil;
 
-var
-  count: Integer;
-  x: Integer;
-  nt: NeighborType;
 begin
   Randomize;
   g_generator.Init;

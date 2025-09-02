@@ -59,8 +59,8 @@ ConnectionListType=record
    connections: array[0..MAX_TOTAL_CONNECTIONS - 1] of ConnectionType;
 end;
 
-{ DungeonGenType - the content of a single region of the generated dungeon}
-DungeonGenType=record
+{ DungeonRegionType - the content of a single region of the generated dungeon}
+DungeonRegionType=record
    room_x: Byte;
    room_y: Byte;
    room_width: Byte;
@@ -69,22 +69,22 @@ DungeonGenType=record
    num_connected: Byte;
 end;
 
-{ TODO : Do the encapsulation once the generator is done }
+{ DungeonGenerator - the class that actually generates the dungeon structure }
 DungeonGenerator=object
-   dungeon_rooms: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonGenType;
-
    procedure Init;
    procedure generate;
-   procedure get_region(region_idx: Integer; var region: DungeonGenType);
-   procedure create_room(region_idx: Integer);
-   procedure connect_rooms(from_region: Integer; to_region: Integer);
-   procedure get_neighbors(region: Integer; var neighbors: NeighborType);
-   procedure dump_connections;
-   function get_random_unconnected_neighbor(region: Integer) : Integer;
-   function get_random_connected_neighbor(region: Integer) : Integer;
-   function xy_to_region(x: Integer; y: Integer) : Integer;
+   procedure get_region(region_idx: Integer; var region: DungeonRegionType);
    procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
+   function xy_to_region(x: Integer; y: Integer) : Integer;
 
+   private
+      dungeon_regions: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonRegionType;
+      procedure create_room(region_idx: Integer);
+      procedure connect_rooms(from_region: Integer; to_region: Integer);
+      procedure get_neighbors(region: Integer; var neighbors: NeighborType);
+      procedure dump_connections;
+      function get_random_unconnected_neighbor(region: Integer) : Integer;
+      function get_random_connected_neighbor(region: Integer) : Integer;
 end;
 
 { DungeonSquareType - the content of a single carved square of the dungeon}
@@ -140,14 +140,14 @@ begin
    begin
       for y := 0 to DUNGEON_GEN_NUM_ROWS - 1 do
       begin
-         dungeon_rooms[x][y].room_x := 0;
-         dungeon_rooms[x][y].room_y := 0;
-         dungeon_rooms[x][y].room_width := 0;
-         dungeon_rooms[x][y].room_height := 0;
-         dungeon_rooms[x][y].num_connected := 0;
+         dungeon_regions[x][y].room_x := 0;
+         dungeon_regions[x][y].room_y := 0;
+         dungeon_regions[x][y].room_width := 0;
+         dungeon_regions[x][y].room_height := 0;
+         dungeon_regions[x][y].num_connected := 0;
          for idx := 0 to MAX_CONNECTIONS - 1 do
          begin
-            dungeon_rooms[x][y].connected[idx] := -1;
+            dungeon_regions[x][y].connected[idx] := -1;
          end;
       end;
    end;
@@ -160,7 +160,7 @@ var
    neighbor_region: Integer;
    connected_count: Integer;
    region_found: Boolean;
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
 begin
 
    { Generate a room in every region }
@@ -223,12 +223,12 @@ end;
      - region_idx: the index value of the region
      - var region: the information about that region
 }
-procedure DungeonGenerator.get_region(region_idx: Integer; var region: DungeonGenType);
+procedure DungeonGenerator.get_region(region_idx: Integer; var region: DungeonRegionType);
 var
    region_x, region_y: Integer;
 begin
    region_to_xy(region_idx, region_x, region_y);
-   region := dungeon_rooms[region_x][region_y];
+   region := dungeon_regions[region_x][region_y];
 end;
 
 { create_room : adds a room to a region in the dungeon
@@ -281,10 +281,10 @@ begin
    room_y := Random(max_pos - min_pos) + min_pos;
 
    region_to_xy(region_idx, region_x, region_y);
-   dungeon_rooms[region_x][region_y].room_x := room_x;
-   dungeon_rooms[region_x][region_y].room_y := room_y;
-   dungeon_rooms[region_x][region_y].room_width := room_width;
-   dungeon_rooms[region_x][region_y].room_height := room_height;
+   dungeon_regions[region_x][region_y].room_x := room_x;
+   dungeon_regions[region_x][region_y].room_y := room_y;
+   dungeon_regions[region_x][region_y].room_width := room_width;
+   dungeon_regions[region_x][region_y].room_height := room_height;
 end;
 
 { connect_rooms : joins two rooms by marking them as connected in the source and target room structs
@@ -311,16 +311,16 @@ begin
    region_to_xy(from_region, region_x1, region_y1);
    region_to_xy(to_region, region_x2, region_y2);
    { If either the source or destination room has a spare open connection, then continue }
-   if (dungeon_rooms[region_x1][region_y1].num_connected < MAX_CONNECTIONS) and
-      (dungeon_rooms[region_x2][region_y2].num_connected < MAX_CONNECTIONS) then
+   if (dungeon_regions[region_x1][region_y1].num_connected < MAX_CONNECTIONS) and
+      (dungeon_regions[region_x2][region_y2].num_connected < MAX_CONNECTIONS) then
    begin
       { Get the index of the source and destination regions }
       source_index := (region_y1 * DUNGEON_GEN_NUM_COLS) + region_x1;
       dest_index := (region_y2 * DUNGEON_GEN_NUM_ROWS) + region_x2;
 
       { these two variables are used to help make some of the following lines of code shorter }
-      source_connected := dungeon_rooms[region_x1][region_y1].num_connected;
-      dest_connected := dungeon_rooms[region_x2][region_y2].num_connected;
+      source_connected := dungeon_regions[region_x1][region_y1].num_connected;
+      dest_connected := dungeon_regions[region_x2][region_y2].num_connected;
 
       { If both rooms are already directly connected to each other, skip the connection.
         Since rooms are connected in pairs, we'll just check the source room for the connection
@@ -328,9 +328,9 @@ begin
       already_connected := False;
       for idx := 0 to MAX_CONNECTIONS - 1 do
       begin
-         if dungeon_rooms[region_x1][region_y1].connected[idx] <> -1 then
+         if dungeon_regions[region_x1][region_y1].connected[idx] <> -1 then
          begin
-            if dungeon_rooms[region_x1][region_y1].connected[idx] = dest_index then
+            if dungeon_regions[region_x1][region_y1].connected[idx] = dest_index then
             begin
                already_connected := True;
             end;
@@ -339,12 +339,12 @@ begin
 
       if already_connected = False then begin
          { Set the connected value of the source region to the destination region }
-         dungeon_rooms[region_x1][region_y1].connected[source_connected] := dest_index;
-         dungeon_rooms[region_x1][region_y1].num_connected := source_connected + 1;
+         dungeon_regions[region_x1][region_y1].connected[source_connected] := dest_index;
+         dungeon_regions[region_x1][region_y1].num_connected := source_connected + 1;
 
          { Set the connected value of the destination region to the source region }
-         dungeon_rooms[region_x2][region_y2].connected[dest_connected] := source_index;
-         dungeon_rooms[region_x2][region_y2].num_connected := dest_connected + 1;
+         dungeon_regions[region_x2][region_y2].connected[dest_connected] := source_index;
+         dungeon_regions[region_x2][region_y2].num_connected := dest_connected + 1;
       end;
    end;
 end;
@@ -420,7 +420,7 @@ var
    num_candidates: Integer;
    candidates: array[0..3] of Byte;
    neighbors: NeighborType;
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
    idx: Integer;
 begin
    num_candidates := 0;
@@ -454,7 +454,7 @@ var
    num_candidates: Integer;
    candidates: array[0..3] of Byte;
    neighbors: NeighborType;
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
    idx: Integer;
 begin
    num_candidates := 0;
@@ -485,7 +485,7 @@ end;
 procedure DungeonGenerator.dump_connections;
 var
    region, idx: Integer;
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
 begin
    for region := 0 to NUM_REGIONS - 1 do
    begin
@@ -667,7 +667,7 @@ var
    offset_x: Integer;
    offset_y: Integer;
    { A reference to a single region, used to extract room data for the region }
-   region: DungeonGenType;
+   region: DungeonRegionType;
    { A unique connection list, used to carve between rooms }
    clist: ConnectionListType;
 begin
@@ -718,7 +718,7 @@ procedure SLACDungeon.generate_unique_connection_list(gen: DungeonGenerator; var
 var
    idx: Integer;
    idx2: Integer;
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
 begin
    clist.num_connections := 0;
 
@@ -747,7 +747,7 @@ end;
 }
 procedure SLACDungeon.carve_between_regions(src_region: Integer; dest_region: Integer; gen: DungeonGenerator);
 var
-   dgt: DungeonGenType;
+   dgt: DungeonRegionType;
    room_top: Integer;
    room_left: Integer;
    region_x, region_y: Integer;
