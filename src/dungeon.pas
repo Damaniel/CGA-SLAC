@@ -76,9 +76,13 @@ DungeonGenerator=object
    procedure get_region(region_idx: Integer; var region: DungeonRegionType);
    procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
    function xy_to_region(x: Integer; y: Integer) : Integer;
+   function get_up_stair_region: Integer;
+   function get_down_stair_region: Integer;
 
    private
       dungeon_regions: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonRegionType;
+      up_stair_region: Byte;
+      down_stair_region: Byte;
       procedure create_room(region_idx: Integer);
       procedure connect_rooms(from_region: Integer; to_region: Integer);
       procedure get_neighbors(region: Integer; var neighbors: NeighborType);
@@ -102,8 +106,10 @@ SLACDungeon=object
    procedure add_item(x: Integer; y: Integer; uid: Integer);
    procedure set_square_type(x: Integer; y: Integer; square_type: Byte);
    procedure set_square_seen(x: Integer; y: Integer; seen: Boolean);
+   procedure set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
    function get_square_type(x: Integer; y: Integer) : Byte;
    function get_square_seen(x: Integer; y: Integer) : Boolean;
+   function get_square_in_room(x: Integer; y: Integer) : Boolean;
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
    procedure create_from_gen_data(var gen: DungeonGenerator);
@@ -111,6 +117,7 @@ SLACDungeon=object
 
    private
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+      procedure add_stairs(gen: DungeonGenerator);
       procedure generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
       procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
                                     var room_x: Integer; var room_y: Integer);
@@ -174,6 +181,8 @@ begin
      1 so the counts line up correctly. }
    connected_count := 1;
    region := Random(NUM_REGIONS);
+   { Mark the first region as having the up stairs }
+   up_stair_region := region;
    neighbor_region := get_random_unconnected_neighbor(region);
    while neighbor_region <> -1 do
    begin
@@ -213,6 +222,8 @@ begin
          end;
       until (region_found = True) or (region >= NUM_REGIONS);
    end;
+   { Mark last connected region as having the down stairs }
+   down_stair_region := region;
 
    { Finally, try connecting random regions that aren't already connected }
 end;
@@ -475,6 +486,18 @@ begin
    end;
 end;
 
+{ get_up_stair_region - returns the marked up stair region }
+function DungeonGenerator.get_up_stair_region: Integer;
+begin
+   get_up_stair_region := up_stair_region;
+end;
+
+{ get_down_stair_region - returns the marked down stair region }
+function DungeonGenerator.get_down_stair_region: Integer;
+begin
+   get_down_stair_region := down_stair_region;
+end;
+
 { dump_connections - lists all connections between regions to the console.
 
   Note that these are not *unique* connections - each connected room has
@@ -587,6 +610,23 @@ begin
    end;
 end;
 
+{ set_square_in_room: sets the in-room status of the square at the specified location
+
+  Parameters:
+    x, y : the location of the square to modify
+    in_room : is this square in a room?
+}
+procedure SLACDungeon.set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
+begin
+   if in_room = True then
+   begin
+      squares[x][y].flags := squares[x][y].flags or $20;
+   end
+   else begin
+      squares[x][y].flags := squares[x][y].flags and $df;
+   end;
+end;
+
 { get_square_type : gets the square type of the square at the specified location
 
   Parameters:
@@ -619,6 +659,28 @@ begin
    end
    else begin
       get_square_seen := False;
+   end;
+end;
+
+{ get_square_in_room : gets the in-room status of the square at the specified location
+
+  Parameters:
+    x, y : the location of the square
+
+  Returns:
+    the in-room status of the square (True = in a room, False = not in a room)
+}
+function SLACDungeon.get_square_in_room(x: Integer; y: Integer) : Boolean;
+var
+   in_room: Byte;
+begin
+   in_room := (squares[x][y].flags and $20) shr 5;
+   if in_room = 1 then
+   begin
+      get_square_in_room := True;
+   end
+   else begin
+      get_square_in_room := False;
    end;
 end;
 
@@ -688,6 +750,7 @@ begin
          for idx_x := offset_x to offset_x + region.room_width - 1 do
          begin
             set_square_type(idx_x, idx_y, SQUARE_FLOOR);
+            set_square_in_room(idx_x, idx_y, True);
          end;
       end;
    end;
@@ -701,6 +764,9 @@ begin
    begin
       carve_between_regions(clist.connections[connection_idx].source, clist.connections[connection_idx].dest, gen);
    end;
+
+   { Add the stairs }
+   add_stairs(gen);
 
 end;
 
@@ -822,6 +888,7 @@ begin
       for idx := start_pos to end_pos do
       begin
          set_square_type(idx, y1, SQUARE_FLOOR);
+         set_square_in_room(idx, y1, False);
       end;
    end
    { If vertical, iterate from the lower of the two y values to the higher of the two }
@@ -840,11 +907,57 @@ begin
       for idx := start_pos to end_pos do
       begin
          set_square_type(x1, idx, SQUARE_FLOOR);
+         set_square_in_room(x1, idx, False);
       end;
    end
    else begin
       Writeln('Warning: non-horizontal, non-vertical carve request!');
    end;
+end;
+
+procedure SLACDungeon.add_stairs(gen: DungeonGenerator);
+var
+   dgt: DungeonRegionType;
+   room_top, room_left: Integer;
+   region_x, region_y: Integer;
+   stair_x, stair_y: Integer;
+   up_stair_region, down_stair_region: Integer;
+begin
+   { Get a random room position from the up stairs region}
+   up_stair_region := gen.get_up_stair_region;
+   gen.get_region(up_stair_region, dgt);
+   gen.region_to_xy(up_stair_region, region_x, region_y);
+   room_top := region_y * REGION_HEIGHT + dgt.room_y;
+   room_left := region_x * REGION_WIDTH + dgt.room_x;
+   get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
+                       room_top + dgt.room_height - 1, stair_x, stair_y);
+   { Add up stairs }
+   set_square_type(stair_x, stair_y, SQUARE_UP_STAIRS);
+
+   { Get a random room position from the down stairs region }
+   down_stair_region := gen.get_down_stair_region;
+   gen.get_region(down_stair_region, dgt);
+   gen.region_to_xy(down_stair_region, region_x, region_y);
+   room_top := region_y * REGION_HEIGHT + dgt.room_y;
+   room_left := region_x * REGION_WIDTH + dgt.room_x;
+   get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
+                       room_top + dgt.room_height - 1, stair_x, stair_y);
+
+   { Add down stairs }
+   set_square_type(stair_x, stair_y, SQUARE_DOWN_STAIRS);
+end;
+
+{ get_random_room_pos - returns a random position within the region specified by (x1,y1)-(x2,y2).
+
+   Parameters:
+     x1, y1, x2, y2: the extents of the room
+     var room_x, var room_y: the random position of the space selected in the room
+}
+procedure SLACDungeon.get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
+                                          var room_x: Integer; var room_y: Integer);
+begin
+   room_x := Random(x2 - x1) + x1;
+   room_y := Random(y2 - y1) + y1;
 end;
 
 { dump - debug function that prints a copy of the dungeon to the console.}
@@ -867,19 +980,6 @@ begin
       end;
       Writeln('');
    end;
-end;
-
-{ get_random_room_pos - returns a random position within the region specified by (x1,y1)-(x2,y2).
-
-   Parameters:
-     x1, y1, x2, y2: the extents of the room
-     var room_x, var room_y: the random position of the space selected in the room
-}
-procedure SLACDungeon.get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
-                                          var room_x: Integer; var room_y: Integer);
-begin
-   room_x := Random(x2 - x1) + x1;
-   room_y := Random(y2 - y1) + y1;
 end;
 
 end.
