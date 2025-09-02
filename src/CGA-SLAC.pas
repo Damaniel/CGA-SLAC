@@ -17,5 +17,4 @@ begin
   g_generator.generate;
   g_dungeon.create_from_gen_data(g_generator);
   g_dungeon.dump;
-  g_generator.dump_connections;
 end.

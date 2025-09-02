@@ -737,6 +737,14 @@ begin
    end;
 end;
 
+{ carve_between_regions - carves a passage between a random point in the source region and a random point in
+                          the destination region
+
+   Parameters:
+     src_region - the source region
+     dest_region - the destination region
+     gen - the dungeon generator (used to get region info)
+}
 procedure SLACDungeon.carve_between_regions(src_region: Integer; dest_region: Integer; gen: DungeonGenerator);
 var
    dgt: DungeonGenType;
@@ -782,20 +790,18 @@ begin
    carve_between_xy(intermediate_x, intermediate_y, dest_x, dest_y);
 end;
 
+{ carve_between_xy - carves all of the dungeon spaces between two locations.  The two locations should be
+                     form either a horizontal or vertical line.
+
+   Parameters:
+     x1, y1 - the location to carve from
+     x2, y2 - the location to carve to
+}
 procedure SLACDungeon.carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
 var
    start_pos, end_pos: Integer;
    idx: Integer;
 begin
-   Write('In carve_between_xy: ');
-   Write(x1);
-   Write(' ');
-   Write(y1);
-   Write(' - ');
-   Write(x2);
-   Write(' ');
-   Writeln(y2);
-
    { All carving will be either horizontal or vertical}
 
    { Determine if horizontal or vertical }
