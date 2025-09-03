@@ -12,6 +12,7 @@ uses
     jfunc,
     timer,
     txtgraph,
+    Globals,
     Dungeon;
 
 const
@@ -26,7 +27,6 @@ const
 
     CLEAR_ALL = 0;
     SET_ALL = 1;
-
 type
 
 RenderComponentsType=record
@@ -48,7 +48,7 @@ procedure adjust_all_render_components(var components: RenderComponentsType; com
 procedure render_init;
 procedure render_cleanup;
 procedure render_components(var components: RenderComponentsType);
-procedure render_dungeon_area(top: Integer; left: Integer);
+procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
 
 implementation
 
@@ -85,14 +85,33 @@ procedure render_components(var components: RenderComponentsType);
 begin
     if components.render_dungeon = True then
     begin
-        render_dungeon_area(0, 0);
+        render_dungeon_area(0, 0, g_dungeon);
         components.render_dungeon := False;
     end;
 end;
 
-procedure render_dungeon_area(top: Integer; left: Integer);
+{ render_dungeon_area - draws the visible portion of the dungeon in the designated on-screen area.
+
+  Parameters:
+    - left: the x position of the dungeon that should be drawn at the top left corner of the area
+    - top: the y position of the dungeon that should be drawn at the top left corner of the area
+
+  Note that 'left' and 'top' can be negative.  The left and top positions will generally be
+  calculated relative to the player's current position in the dungeon (as the player will always
+  be centered in the area).  Note that any rendered area on the screen may also be regions that
+  extend beyond the width/height of the dungeon.  In both the <0 and >(width or height) case,
+  we'll render fog of war by default.
+}
+procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
+var
+    x, y: Integer;
 begin
-    Writeln('rendering dungeon area');
+    for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
+    begin
+        for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
+        begin
+        end;
+    end;
 end;
 
 end.
