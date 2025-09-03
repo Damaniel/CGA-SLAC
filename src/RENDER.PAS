@@ -72,6 +72,8 @@ begin
   new(g_font, init('FONTS'));
 
   tg_init;
+  tg_clear(0);
+
   adjust_all_render_components(g_render_components, CLEAR_ALL);
 end;
 
@@ -105,12 +107,39 @@ end;
 procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
 var
     x, y: Integer;
+    tile_x, tile_y: Integer;
 begin
+    tile_y := DUNGEON_AREA_Y;
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
     begin
+        tile_x := DUNGEON_AREA_X;
         for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
         begin
+            Write('left + x = ');
+            Writeln(left + x);
+            Write('top + y = ');
+            Writeln(top + y);
+            Write('tile_x = ');
+            Writeln(tile_x);
+            Write('tile_y = ');
+            Writeln(tile_y);
+            Writeln('--------------------------');
+            { Draw fog of war for squares outside of the dungeon area }
+            if ((left + x) < 0) or ((left + x) > DUNGEON_WIDTH - 1) or
+               ((top + y) < 0) or ((top + y) > DUNGEON_HEIGHT - 1) then
+            begin
+                tg_tile7(tile_x, tile_y, SPRITE_MEGALITH);
+            end
+            else begin
+                { Draw fog of war if square isn't seen yet }
+                { Draw wall if square is a wall }
+                { Draw floor if square is a floor }
+                { Draw stairs if square is a stair }
+                tg_tile7(tile_x, tile_y, SPRITE_MEGALITH);
+            end;
+            tile_x := tile_x + DUNGEON_AREA_TILE_WIDTH;
         end;
+        tile_y := tile_y + DUNGEON_AREA_TILE_HEIGHT;
     end;
 end;
 
