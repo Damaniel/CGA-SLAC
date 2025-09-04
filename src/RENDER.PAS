@@ -49,6 +49,7 @@ procedure render_init;
 procedure render_cleanup;
 procedure render_components(var components: RenderComponentsType);
 procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
+procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 
 implementation
 
@@ -87,7 +88,7 @@ procedure render_components(var components: RenderComponentsType);
 begin
     if components.render_dungeon = True then
     begin
-        render_dungeon_area(0, 0, g_dungeon);
+        render_dungeon_area(-5, -5, g_dungeon);
         components.render_dungeon := False;
     end;
 end;
@@ -108,6 +109,8 @@ procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
+    sq_type: Integer;
+    dt_x, dt_y: Integer;
 begin
     tile_y := DUNGEON_AREA_Y;
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
@@ -115,31 +118,48 @@ begin
         tile_x := DUNGEON_AREA_X;
         for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
         begin
-            Write('left + x = ');
-            Writeln(left + x);
-            Write('top + y = ');
-            Writeln(top + y);
-            Write('tile_x = ');
-            Writeln(tile_x);
-            Write('tile_y = ');
-            Writeln(tile_y);
-            Writeln('--------------------------');
+            dt_x := left + x;
+            dt_y := top + y;
             { Draw fog of war for squares outside of the dungeon area }
-            if ((left + x) < 0) or ((left + x) > DUNGEON_WIDTH - 1) or
-               ((top + y) < 0) or ((top + y) > DUNGEON_HEIGHT - 1) then
+            if (dt_x < 0) or ((dt_x) > DUNGEON_WIDTH - 1) or
+               ((dt_y) < 0) or ((dt_y) > DUNGEON_HEIGHT - 1) then
             begin
-                tg_tile7(tile_x, tile_y, SPRITE_MEGALITH);
+                render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
             end
             else begin
-                { Draw fog of war if square isn't seen yet }
-                { Draw wall if square is a wall }
-                { Draw floor if square is a floor }
-                { Draw stairs if square is a stair }
-                tg_tile7(tile_x, tile_y, SPRITE_MEGALITH);
+                { Draw fog of war if square isn't seen yet : TODO - should be False }
+                if d.get_square_seen(dt_x, dt_y) = True then
+                begin
+                    render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
+                end
+                else begin
+                    sq_type := d.get_square_type(dt_x, dt_y);
+                    case sq_type of
+                        SQUARE_WALL: tg_tile7(tile_x, tile_y, SPRITE_WALL1);
+                        SQUARE_FLOOR: begin
+                                    end;
+                        SQUARE_UP_STAIRS: begin
+                                        end;
+                        SQUARE_DOWN_STAIRS: begin
+                                            end;
+                    end;
+                end;
             end;
             tile_x := tile_x + DUNGEON_AREA_TILE_WIDTH;
         end;
         tile_y := tile_y + DUNGEON_AREA_TILE_HEIGHT;
+    end;
+end;
+
+procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
+begin
+    if ((dt_x mod 2 = 0) and (dt_y mod 2 = 0)) or
+        ((dt_x mod 2 = 1) and (dt_y mod 2 = 1)) then
+    begin
+        tg_tile7(tile_x, tile_y, SPRITE_BFOW1);
+    end
+    else begin
+        tg_tile7(tile_x, tile_y, SPRITE_BFOW2);
     end;
 end;
 
