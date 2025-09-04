@@ -6,9 +6,9 @@ uses
   txtgraph, { 3rd party }
   Globals,
   Dungeon,
+  Player,
   Render,
-  Input,
-  Slacutil;
+  Input;
 
 const
   FRAME_RATE = 30;
@@ -37,6 +37,7 @@ begin
   g_generator.generate;
   g_dungeon.create_from_gen_data(g_generator);
   g_render_components.render_dungeon := True;
+  g_render_components.render_interface := True;
 
   while g_exit_game = False do
   begin
