@@ -108,6 +108,7 @@ SLACDungeon=object
    procedure set_square_seen(x: Integer; y: Integer; seen: Boolean);
    procedure set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
    procedure light_area(x: Integer; y: Integer);
+   procedure get_room_extents(x: byte; y: Byte; var x1: Byte; var y1: Byte; var x2: Byte; var y2: Byte);
    function get_square_type(x: Integer; y: Integer) : Byte;
    function get_square_seen(x: Integer; y: Integer) : Boolean;
    function get_square_in_room(x: Integer; y: Integer) : Boolean;
@@ -893,7 +894,7 @@ begin
       for idx := start_pos to end_pos do
       begin
          set_square_type(idx, y1, SQUARE_FLOOR);
-         set_square_in_room(idx, y1, False);
+         { set_square_in_room(idx, y1, False); }
       end;
    end
    { If vertical, iterate from the lower of the two y values to the higher of the two }
@@ -912,7 +913,7 @@ begin
       for idx := start_pos to end_pos do
       begin
          set_square_type(x1, idx, SQUARE_FLOOR);
-         set_square_in_room(x1, idx, False);
+         { set_square_in_room(x1, idx, False);}
       end;
    end
    else begin
@@ -982,10 +983,37 @@ begin
 end;
 
 procedure SLACDungeon.light_area(x: Integer; y: Integer);
+var
+   x1, y1, x2, y2: Byte;
+   idx_x, idx_y : Byte;
 begin
    { If in a room, light the room }
+   if get_square_in_room(x, y) = True then
+   begin
+      get_room_extents(x, y, x1, y1, x2, y2);
+      { Check to see if a spot in the room is already lit.  If not, light the room }
+      { Note we check all four spots diagonally from the player, since the spots
+        where the player is standing now will already be technically seen, as we
+        marked it when the player moved to the previous step.  By checking the 4 diagonals,
+        one of them will catch the room but not a square that was previously marked.
+        Hacky, but 4 comparisons per move in a room beats potentially dozens by just
+        marking each spot in the room every time the player moves. }
+      if (get_square_seen(x - 1 , y - 1) = False) or
+         (get_square_seen(x + 1, y - 1) = False) or
+         (get_square_seen(x - 1, y + 1) = False) or
+         (get_square_seen(x + 1, y + 1) = False) then
+      begin
+         for idx_y := y1 to y2 do
+         begin
+            for idx_x := x1 to x2 do
+            begin
+               set_square_seen(idx_x, idx_y, True);
+            end;
+         end;
+      end;
+   end;
 
-   {Otherwise, light the square and the ones immediately surrounding }
+   { Light the square and the ones immediately surrounding }
    set_square_seen(x - 1, y - 1, True);
    set_square_seen(x, y - 1, True);
    set_square_seen(x + 1, y - 1, True);
@@ -998,12 +1026,57 @@ begin
 
 end;
 
+procedure SLACDungeon.get_room_extents(x: Byte; y: Byte; var x1: Byte; var y1: Byte; var x2: Byte; var y2: Byte);
+var
+   lx, ty, rx, by: Byte;
+begin
+   { Check to see if we're even in a room to begin with}
+   if get_square_in_room(x, y) = True then
+   begin
+      { Get the left extent }
+      lx := x;
+      while get_square_in_room(lx, y) = True do
+      begin
+         lx := lx - 1;
+      end;
+      x1 := lx;
+
+      { Get the right extent }
+      rx := x;
+      while get_square_in_room(rx, y) = True do
+      begin
+         rx := rx + 1;
+      end;
+      x2 := rx;
+
+      { Get the top extent }
+      ty := y;
+      while get_square_in_room(x, ty) = True do
+      begin
+         ty := ty - 1;
+      end;
+      y1 := ty;
+
+      { Get the bottom extent }
+      by := y;
+      while get_square_in_room(x, by) = True do
+      begin
+         by := by + 1;
+      end;
+      y2 := by;
+   end;
+end;
+
+
 { dump - debug function that prints a copy of the dungeon to the console.}
 procedure SLACDungeon.dump;
 var
    x: Integer;
    y: Integer;
 begin
+{   Writeln('--------------------------------------');
+   Writeln('Dungeon map');
+   Writeln('--------------------------------------');
    for y := 0 to DUNGEON_HEIGHT - 1 do
    begin
       for x := 0 to DUNGEON_WIDTH - 1 do
@@ -1018,6 +1091,42 @@ begin
       end;
       Writeln('');
    end;
+
+   Writeln('--------------------------------------');
+   Writeln('Room map');
+   Writeln('--------------------------------------');
+   for y := 0 to DUNGEON_HEIGHT - 1 do
+   begin
+      for x := 0 to DUNGEON_WIDTH - 1 do
+      begin
+         if get_square_in_room(x, y) = True then
+         begin
+            Write('#');
+         end
+         else begin
+            Write(' ');
+         end;
+      end;
+      Writeln('');
+   end;
+
+   Writeln('--------------------------------------');
+   Writeln('Visible map');
+   Writeln('--------------------------------------');
+   for y := 0 to DUNGEON_HEIGHT - 1 do
+   begin
+      for x := 0 to DUNGEON_WIDTH - 1 do
+      begin
+         if get_square_seen(x, y) = True then
+         begin
+            Write(' ');
+         end
+         else begin
+            Write('#');
+         end;
+      end;
+      Writeln('');
+   end;}
 end;
 
 end.
