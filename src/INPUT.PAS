@@ -9,9 +9,12 @@ unit Input;
 interface
 
 uses
-    jfunc;
+    jfunc,
+    Player,
+    Dungeon,
+    Render;
 
-procedure process_input;
+procedure process_input(var p : SLACPlayer; var d : SLACDungeon);
 
 var
     g_exit_game: Boolean;
@@ -19,12 +22,14 @@ var
 implementation
 
 { Get and handle keypresses. }
-procedure process_input;
+procedure process_input(var p : SLACPlayer; var d : SLACDungeon);
 var
   keyRead: Char;
   extendedKey: Boolean;
   status: Integer;
-  isSuccess: Boolean;
+  x, y: Byte;
+  sq: Byte;
+  moved: Boolean;
 begin
     { If a key press (normal or extended) is detected, figure out what it is and process appropriately. }
     if keypressed then begin
@@ -33,12 +38,59 @@ begin
 
         { Detect extended keypress. }
         if (keyRead = #0) then begin
-        extendedKey := True;
-        keyRead := readkey;
+            extendedKey := True;
+            keyRead := readkey;
+        end;
+
+        p.get_pos(x, y);
+        moved := False;
+
+        { Moving up }
+        if (keyRead = #72) and (extendedKey = True) then begin
+            sq := d.get_square_type(x, y-1);
+            if sq <> SQUARE_WALL then begin
+                p.set_pos(x, y-1);
+                d.light_area(x, y-1);
+                moved := True;
+            end;
+        end;
+
+        { Moving down }
+        if (keyRead = #80) and (extendedKey = True) then begin
+            sq := d.get_square_type(x, y+1);
+            if sq <> SQUARE_WALL then begin
+                p.set_pos(x, y+1);
+                d.light_area(x, y+1);
+                moved := True;
+            end;
+        end;
+
+        { Moving left }
+        if (keyRead = #75) and (extendedKey = True) then begin
+            sq := d.get_square_type(x-1, y);
+            if sq <> SQUARE_WALL then begin
+                p.set_pos(x-1, y);
+                d.light_area(x-1, y);
+                moved := True;
+            end;
+        end;
+
+        { Moving right }
+        if (keyRead = #77) and (extendedKey = True) then begin
+            sq := d.get_square_type(x+1, y);
+            if sq <> SQUARE_WALL then begin
+                p.set_pos(x+1, y);
+                d.light_area(x+1, y);
+                moved := True;
+            end;
         end;
 
         if keyRead = #27 then begin
             g_exit_game := True;
+        end;
+
+        if moved = True then begin
+            g_render_components.render_dungeon := True;
         end;
     end;
 end;

@@ -107,15 +107,20 @@ SLACDungeon=object
    procedure set_square_type(x: Integer; y: Integer; square_type: Byte);
    procedure set_square_seen(x: Integer; y: Integer; seen: Boolean);
    procedure set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
+   procedure light_area(x: Integer; y: Integer);
    function get_square_type(x: Integer; y: Integer) : Byte;
    function get_square_seen(x: Integer; y: Integer) : Boolean;
    function get_square_in_room(x: Integer; y: Integer) : Boolean;
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
    procedure create_from_gen_data(var gen: DungeonGenerator);
+   procedure get_up_stair_pos(var x: Byte; var y: Byte);
+   procedure get_down_stair_pos(var x: Byte; var y: Byte);
    procedure dump;
 
    private
+      up_stair_x, up_stair_y: Byte;
+      down_stair_x, down_stair_y: Byte;
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
       procedure add_stairs(gen: DungeonGenerator);
       procedure generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
@@ -933,6 +938,8 @@ begin
                        room_top + dgt.room_height - 1, stair_x, stair_y);
    { Add up stairs }
    set_square_type(stair_x, stair_y, SQUARE_UP_STAIRS);
+   up_stair_x := stair_x;
+   up_stair_y := stair_y;
 
    { Get a random room position from the down stairs region }
    down_stair_region := gen.get_down_stair_region;
@@ -945,6 +952,8 @@ begin
 
    { Add down stairs }
    set_square_type(stair_x, stair_y, SQUARE_DOWN_STAIRS);
+   down_stair_x := stair_x;
+   down_stair_y := stair_y;
 end;
 
 { get_random_room_pos - returns a random position within the region specified by (x1,y1)-(x2,y2).
@@ -958,6 +967,35 @@ procedure SLACDungeon.get_random_room_pos(x1: Integer; y1: Integer; x2: Integer;
 begin
    room_x := Random(x2 - x1) + x1;
    room_y := Random(y2 - y1) + y1;
+end;
+
+procedure SLACDungeon.get_up_stair_pos(var x: Byte; var y: Byte);
+begin
+   x := up_stair_x;
+   y := up_stair_y;
+end;
+
+procedure SLACDungeon.get_down_stair_pos(var x: Byte; var y: Byte);
+begin
+   x := down_stair_x;
+   y := down_stair_y;
+end;
+
+procedure SLACDungeon.light_area(x: Integer; y: Integer);
+begin
+   { If in a room, light the room }
+
+   {Otherwise, light the square and the ones immediately surrounding }
+   set_square_seen(x - 1, y - 1, True);
+   set_square_seen(x, y - 1, True);
+   set_square_seen(x + 1, y - 1, True);
+   set_square_seen(x - 1, y, True);
+   set_square_seen(x, y, True);
+   set_square_seen(x + 1, y, True);
+   set_square_seen(x - 1, y + 1, True);
+   set_square_seen(x, y + 1, True);
+   set_square_seen(x + 1, y + 1, True);
+
 end;
 
 { dump - debug function that prints a copy of the dungeon to the console.}

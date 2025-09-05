@@ -158,7 +158,8 @@ const
     SPRITE_LPROG =    95;
     SPRITE_CPROG =    96;
     SPRITE_RPROG =    97;
-    NUM_SPRITES =     98;
+    SPRITE_BLANK =    98;
+    NUM_SPRITES =     99;
 
     { Weapon classes }
     WEAPON_DAGGER =    0;

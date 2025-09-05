@@ -113,6 +113,7 @@ end;
 procedure SLACPlayer.get_pos(var x: Byte; var y: Byte);
 begin
     x := x_pos;
+    y := y_pos;
 end;
 
 procedure SLACPlayer.set_level(val : Byte);

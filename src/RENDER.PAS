@@ -49,11 +49,11 @@ procedure adjust_all_render_components(var components: RenderComponentsType; com
 procedure render_init;
 procedure render_cleanup;
 procedure render_components(var components: RenderComponentsType);
-procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
+procedure render_dungeon_area(left: Integer; top: Integer; var d: SLACDungeon);
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 procedure render_text_box;
 procedure render_interface;
-procedure render_interface_values(p : SLACPlayer);
+procedure render_interface_values(var p : SLACPlayer);
 
 implementation
 
@@ -89,6 +89,8 @@ begin
 end;
 
 procedure render_components(var components: RenderComponentsType);
+var
+    x, y: Byte;
 begin
     if components.render_interface = True then
     begin
@@ -104,7 +106,8 @@ begin
 
     if components.render_dungeon = True then
     begin
-        render_dungeon_area(-5, -5, g_dungeon);
+        g_player.get_pos(x, y);
+        render_dungeon_area(x - 8, y - 6, g_dungeon);
         components.render_dungeon := False;
     end;
 end;
@@ -121,12 +124,13 @@ end;
   extend beyond the width/height of the dungeon.  In both the <0 and >(width or height) case,
   we'll render fog of war by default.
 }
-procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
+procedure render_dungeon_area(left: Integer; top: Integer; var d: SLACDungeon);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
     sq_type: Integer;
     dt_x, dt_y: Integer;
+    sprite: Integer;
 begin
     tile_y := DUNGEON_AREA_Y;
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
@@ -143,22 +147,20 @@ begin
                 render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
             end
             else begin
-                { Draw fog of war if square isn't seen yet : TODO - should be False }
-                if d.get_square_seen(dt_x, dt_y) = True then
+                { Draw fog of war if square isn't seen yet }
+                if d.get_square_seen(dt_x, dt_y) = False then
                 begin
                     render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
                 end
                 else begin
                     sq_type := d.get_square_type(dt_x, dt_y);
                     case sq_type of
-                        SQUARE_WALL: tg_tile7(tile_x, tile_y, SPRITE_WALL1);
-                        SQUARE_FLOOR: begin
-                                    end;
-                        SQUARE_UP_STAIRS: begin
-                                        end;
-                        SQUARE_DOWN_STAIRS: begin
-                                            end;
+                        SQUARE_WALL: sprite := SPRITE_WALL1;
+                        SQUARE_FLOOR: sprite := SPRITE_BLANK;
+                        SQUARE_UP_STAIRS: sprite := SPRITE_FLOOR;
+                        SQUARE_DOWN_STAIRS: sprite := SPRITE_FLOOR;
                     end;
+                    tg_tile7(tile_x, tile_y, sprite);
                 end;
             end;
             tile_x := tile_x + DUNGEON_AREA_TILE_WIDTH;
@@ -167,7 +169,7 @@ begin
     end;
 
     { Render the player.  The player is always located in the middle of the play area. }
-    tg_tile7(DUNGEON_AREA_X + 63, DUNGEON_AREA_Y + 42, SPRITE_HERO);
+    tg_tile7(DUNGEON_AREA_X + 56, DUNGEON_AREA_Y + 42, SPRITE_HERO);
 
 end;
 
@@ -226,7 +228,7 @@ begin
     tg_rectangle(11, 43, 43, 47, 14);
 end;
 
-procedure render_interface_values(p: SLACPlayer);
+procedure render_interface_values(var p: SLACPlayer);
 var
     s: string[10];
 begin

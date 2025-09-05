@@ -15,6 +15,7 @@ const
 
 var
   g_TimerInterval: Word;
+  p_x, p_y: Byte;
 
 procedure game_init;
 begin
@@ -41,9 +42,13 @@ begin
   g_render_components.render_interface := True;
   g_render_components.render_interface_values := True;
 
+  g_dungeon.get_up_stair_pos(p_x, p_y);
+  g_player.set_pos(p_x, p_y);
+  g_dungeon.light_area(p_x, p_y);
+
   while g_exit_game = False do
   begin
-    process_input;
+    process_input(g_player, g_dungeon);
     render_components(g_render_components);
   end;
 
