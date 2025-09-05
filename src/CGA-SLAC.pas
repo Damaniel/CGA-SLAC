@@ -33,11 +33,13 @@ end;
 begin
   Randomize;
   game_init;
+  g_player.Init;
   g_generator.Init;
   g_generator.generate;
   g_dungeon.create_from_gen_data(g_generator);
   g_render_components.render_dungeon := True;
   g_render_components.render_interface := True;
+  g_render_components.render_interface_values := True;
 
   while g_exit_game = False do
   begin

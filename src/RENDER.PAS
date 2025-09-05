@@ -53,7 +53,7 @@ procedure render_dungeon_area(top: Integer; left: Integer; d: SLACDungeon);
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 procedure render_text_box;
 procedure render_interface;
-procedure render_interface_values;
+procedure render_interface_values(p : SLACPlayer);
 
 implementation
 
@@ -94,6 +94,12 @@ begin
     begin
         render_interface;
         components.render_interface := False;
+    end;
+
+    if components.render_interface_values = True then
+    begin
+        render_interface_values(g_player);
+        components.render_interface_values := False;
     end;
 
     if components.render_dungeon = True then
@@ -159,6 +165,10 @@ begin
         end;
         tile_y := tile_y + DUNGEON_AREA_TILE_HEIGHT;
     end;
+
+    { Render the player.  The player is always located in the middle of the play area. }
+    tg_tile7(DUNGEON_AREA_X + 63, DUNGEON_AREA_Y + 42, SPRITE_HERO);
+
 end;
 
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
@@ -208,13 +218,46 @@ begin
     { Stat information }
     tg_tile7(3, 66, SPRITE_SWORD1);
     tg_tile7(3, 74, SPRITE_SHIELD3);
-    tg_tile7(25, 66, SPRITE_BOOTS1);
-    tg_tile7(25, 74, SPRITE_LUCK);
+    tg_tile7(24, 66, SPRITE_BOOTS1);
+    tg_tile7(24, 74, SPRITE_LUCK);
 
+    { The health and xp bars }
+    tg_rectangle(11, 35, 43, 39, 14);
+    tg_rectangle(11, 43, 43, 47, 14);
 end;
 
-procedure render_interface_values;
+procedure render_interface_values(p: SLACPlayer);
+var
+    s: string[10];
 begin
+    { Floor }
+    g_font^.outTextRight(42, 19, '1', 15);
+    { Level }
+    Str(p.get_level, s);
+    g_font^.outTextRight(42, 27, s, 15);
+    { Health bar }
+
+    { XP bar }
+
+    { Money }
+    Str(p.get_money, s);
+    g_font^.outTextRight(42, 51, s, 15);
+
+    { Atk }
+    Str(p.get_atk, s);
+    g_font^.outTextRight(21, 67, s, 15);
+
+    { Def }
+    Str(p.get_def, s);
+    g_font^.outTextRight(21, 75, s, 15);
+
+    { Spd }
+    Str(p.get_spd, s);
+    g_font^.outTextRight(44, 67, s, 15);
+
+    { Luck }
+    Str(p.get_luck, s);
+    g_font^.outTextRight(44, 75, s, 15);
 
 end;
 

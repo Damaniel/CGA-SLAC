@@ -13,6 +13,29 @@ const
 type
 
 SLACPlayer=object
+    procedure Init;
+    function get_level : Byte;
+    function get_hp : Integer;
+    function get_xp: Longint;
+    function get_money : Longint;
+    function get_atk : Integer;
+    function get_def : Integer;
+    function get_spd: Integer;
+    function get_luck : Integer;
+    procedure get_pos(var x: byte; var y: Byte);
+    procedure set_level(val : Byte);
+    procedure set_hp(val: Integer);
+    procedure set_xp(val: Longint);
+    procedure set_money(val: Longint);
+    procedure set_atk(val: Integer);
+    procedure set_def(val: Integer);
+    procedure set_spd(val: Integer);
+    procedure set_luck(val: Integer);
+    procedure set_pos(x: Byte; y: Byte);
+
+private
+    x_pos: Byte;
+    y_pos: Byte;
     level: Byte;
     hp: Integer;
     xp: Longint;
@@ -21,8 +44,6 @@ SLACPlayer=object
     def: Integer;
     spd: Integer;
     luck: Integer;
-
-    procedure Init;
 end;
 
 var
@@ -47,6 +68,97 @@ begin
     def := getBaseDefense(level);
     spd := getBaseSpeed(level);
     luck := getBaseLuck(level);
+end;
+
+function SLACPlayer.get_level : Byte;
+begin
+    get_level := level;
+end;
+
+function SLACPlayer.get_hp : Integer;
+begin
+    get_hp := hp;
+end;
+
+function SLACPlayer.get_xp : Longint;
+begin
+    get_xp := xp;
+end;
+
+function SLACPlayer.get_money : Longint;
+begin
+    get_money := money;
+end;
+
+function SLACPlayer.get_atk : Integer;
+begin
+    get_atk := atk;
+end;
+
+function SLACPlayer.get_def : Integer;
+begin
+    get_def := def;
+end;
+
+function SLACPlayer.get_spd : Integer;
+begin
+    get_spd := spd;
+end;
+
+function SLACPlayer.get_luck : Integer;
+begin
+    get_luck := luck;
+end;
+
+procedure SLACPlayer.get_pos(var x: Byte; var y: Byte);
+begin
+    x := x_pos;
+end;
+
+procedure SLACPlayer.set_level(val : Byte);
+begin
+    level := val;
+end;
+
+procedure SLACPlayer.set_hp(val : Integer);
+begin
+    hp := val;
+end;
+
+procedure SLACPlayer.set_xp(val : Longint);
+begin
+    xp := val;
+end;
+
+procedure SLACPlayer.set_money(val : Longint);
+begin
+    money := val;
+end;
+
+procedure SLACPlayer.set_atk(val : Integer);
+begin
+    atk := val;
+end;
+
+procedure SLACPlayer.set_def(val : Integer);
+begin
+    def := val;
+end;
+
+procedure SLACPlayer.set_spd(val : Integer);
+begin
+    spd := val;
+end;
+
+procedure SLACPlayer.set_luck(val : Integer);
+begin
+    luck := val;
+end;
+
+procedure SLACPlayer.set_pos(x: Byte; y: Byte);
+begin
+    x_pos := x;
+    y_pos := y;
 end;
 
 { getBaseHP - returns the base HP value for the specified player level.
