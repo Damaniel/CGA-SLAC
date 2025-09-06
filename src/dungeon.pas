@@ -101,8 +101,8 @@ end;
 { DungeonSquareType - the content of a single carved square of the dungeon}
 DungeonSquareType=record
    flags: Byte;
-   enemy_uid: Shortint;
-   item_uid: Shortint;
+   enemy_list_idx: Integer;
+   item_list_idx: Integer;
 end;
 
 { SLACDungeon - the complete carved dungeon }
@@ -556,8 +556,8 @@ end;
 procedure SLACDungeon.initialize_square(x: Integer; y: Integer);
 begin
    squares[x][y].flags := $00;
-   squares[x][y].enemy_uid := NOTHING;
-   squares[x][y].item_uid := NOTHING;
+   squares[x][y].enemy_list_idx := NOTHING;
+   squares[x][y].item_list_idx := NOTHING;
 end;
 
 { add_enemy : Places an enemy reference in the square at the specified location
@@ -568,7 +568,7 @@ end;
 }
 procedure SLACDungeon.add_enemy(x: Integer; y: Integer; uid: Integer);
 begin
-   squares[x][y].enemy_uid := uid;
+   squares[x][y].enemy_list_idx := uid;
 end;
 
 { add_item : Places an item reference in the square at the specified location
@@ -579,7 +579,7 @@ end;
 }
 procedure SLACDungeon.add_item(x: Integer; y: Integer; uid: Integer);
 begin
-   squares[x][y].item_uid := uid;
+   squares[x][y].item_list_idx := uid;
 end;
 
 { set_square_type: sets the type of square (floor or wall) of the square at the specified location
@@ -698,7 +698,7 @@ end;
 }
 function SLACDungeon.get_enemy(x: Integer; y: Integer) : Shortint;
 begin
-   get_enemy := squares[x][y].enemy_uid;
+   get_enemy := squares[x][y].enemy_list_idx;
 end;
 
 { get_item : gets the items, if any, on the square at the specified location
@@ -711,7 +711,7 @@ end;
 }
 function SLACDungeon.get_item(x: Integer; y: Integer) : Shortint;
 begin
-   get_item := squares[x][y]. item_uid;
+   get_item := squares[x][y]. item_list_idx;
 end;
 
 { create_from_gen_data : converts the generated dungeon map into the final dungeon struct

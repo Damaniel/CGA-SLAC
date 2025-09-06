@@ -14,6 +14,7 @@ uses
     txtgraph,
     Globals,
     Player,
+    Enemy,
     Dungeon;
 
 const

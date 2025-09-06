@@ -1,3 +1,9 @@
+{ CGA-SLAC - a roguelike for DOS PCs with a CGA (or better) graphics card
+
+  Copyright 2025 Shaun Brandt
+
+  Licensed under the MIT license.  See LICENSE.md.
+}
 program CGASLAC;
 
 uses
@@ -8,6 +14,7 @@ uses
   Dungeon,
   Player,
   Render,
+  Enemy,
   Input;
 
 const
@@ -48,8 +55,11 @@ begin
 
   while g_exit_game = False do
   begin
-    process_input(g_player, g_dungeon);
-    render_components(g_render_components);
+    if (userTimerExpired(g_TimerInterval)) then
+    begin
+      process_input(g_player, g_dungeon);
+      render_components(g_render_components);
+    end;
   end;
 
   game_cleanup;
