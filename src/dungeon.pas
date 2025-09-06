@@ -984,6 +984,12 @@ begin
    end;
 end;
 
+{ add_stairs - place a set of up stairs and down stairs in the dungeon
+
+  Parameters:
+    - gen : the dungeon generator; it contains information about the regions the stairs
+            should be located
+}
 procedure SLACDungeon.add_stairs(gen: DungeonGenerator);
 var
    dgt: DungeonRegionType;
@@ -1033,18 +1039,33 @@ begin
    room_y := Random(y2 - y1) + y1;
 end;
 
+{get_up_stair_pos - getter function for the position of the up stairs
+
+  Parameters:
+    - x, y : the location of the stairs, returned to the caller
+}
 procedure SLACDungeon.get_up_stair_pos(var x: Byte; var y: Byte);
 begin
    x := up_stair_x;
    y := up_stair_y;
 end;
 
+{get_down_stair_pos - getter function for the position of the down stairs
+
+  Parameters:
+    - x, y : the location of the stairs, returned to the caller
+}
 procedure SLACDungeon.get_down_stair_pos(var x: Byte; var y: Byte);
 begin
    x := down_stair_x;
    y := down_stair_y;
 end;
 
+{ light_area - lights the area around the player, and the room if standing in one
+
+  Parameters:
+    - x, y : the location to light up
+}
 procedure SLACDungeon.light_area(x: Integer; y: Integer);
 var
    x1, y1, x2, y2: Byte;

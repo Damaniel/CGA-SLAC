@@ -21,7 +21,12 @@ var
 
 implementation
 
-{ Get and handle keypresses. }
+{ process_input - gets and handle keypresses
+
+  Parameters:
+    - var p : the player.  Positional values are passed back to the caller
+    - var d : the dungeon.  Lighting values are passed back to the caller
+}
 procedure process_input(var p : SLACPlayer; var d : SLACDungeon);
 var
   keyRead: Char;

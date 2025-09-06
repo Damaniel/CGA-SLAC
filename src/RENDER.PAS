@@ -57,6 +57,13 @@ procedure render_interface_values(var p : SLACPlayer);
 
 implementation
 
+{ adjust_all_render_components - a helper function to force all parts of the screen to be
+  (or not be) redrawn.
+
+  Parameters:
+    - var components: the list of render components to be updated
+    - comp_val: should they be enabled (SET_ALL) or disabled (CLEAR_ALL)?
+}
 procedure adjust_all_render_components(var components: RenderComponentsType; comp_val: Integer);
 var
     set_val: Boolean;
@@ -70,6 +77,7 @@ begin
     components.render_text_box := set_val;
 end;
 
+{ render_init - sets up the graphics system }
 procedure render_init;
 begin
   g_GameTiles.init('SLAC86');
@@ -82,12 +90,24 @@ begin
   adjust_all_render_components(g_render_components, CLEAR_ALL);
 end;
 
+{ render_cleanup - shuts down the graphics system }
 procedure render_cleanup;
 begin
   tg_clear(0);
   tg_term;
 end;
 
+{ render_components - the main render function
+
+  Parameters:
+    - components: a list of components to render (or not render)
+
+  components contains a series of flags that control whether some aspect of the game (i.e. the dungeon,
+  the text log, etc) should be rendered.  Generally, some action will set the rendering of one or more
+  components to True; when the render loop occurs, the components to render are redrawn, and the flag
+  representing that component is set to False so the component won't redraw until requested in the
+  future.
+}
 procedure render_components(var components: RenderComponentsType);
 var
     x, y: Byte;
@@ -144,13 +164,13 @@ begin
             if (dt_x < 0) or ((dt_x) > DUNGEON_WIDTH - 1) or
                ((dt_y) < 0) or ((dt_y) > DUNGEON_HEIGHT - 1) then
             begin
-                render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
+                render_fog_of_war(x, y, tile_x, tile_y);
             end
             else begin
                 { Draw fog of war if square isn't seen yet }
                 if d.get_square_seen(dt_x, dt_y) = False then
                 begin
-                    render_fog_of_war(Abs(dt_x), Abs(dt_y), tile_x, tile_y);
+                    render_fog_of_war(x, y, tile_x, tile_y);
                 end
                 else begin
                     sq_type := d.get_square_type(dt_x, dt_y);
@@ -173,6 +193,22 @@ begin
 
 end;
 
+{ render_fog_of_war - draws the invisible portion of the dungeon at the specified location
+
+  Parameters:
+    - dt_x, dt_y: the relative x and y tile location
+    - tile_x, tile_y: the pixel position of the drawn tile
+
+  The fog of war is actually a 2x2 block of tiles where the tiles are arranged as such:
+
+     1 2
+     2 1
+
+   This function just renders that pattern relative to the specified location.  Depending
+   on the values passed in, this could result in a fog of war that stays fixed relative to
+   the screen, or that moves along with the maze.  Currently I use the former since it will
+   make dirty block rendering far more efficient.
+}
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 begin
     if ((dt_x mod 2 = 0) and (dt_y mod 2 = 0)) or
@@ -185,10 +221,12 @@ begin
     end;
 end;
 
+{ render_text_box - draws the text box (and text log) on the screen }
 procedure render_text_box;
 begin
 end;
 
+{ render_interface - draws the static components of the main game screen }
 procedure render_interface;
 begin
     { The main window }
@@ -228,6 +266,11 @@ begin
     tg_rectangle(11, 43, 43, 47, 14);
 end;
 
+{ render_interface_values - draws the player-specific values to the main game interface
+
+  Parameters:
+    - p: an instance of SLACPlayer (that represents the current player)
+}
 procedure render_interface_values(var p: SLACPlayer);
 var
     s: string[10];
