@@ -16,6 +16,11 @@ const
    SQUARE_DOWN_STAIRS = 3;
    SQUARE_VOID = 4;
 
+   WALL_LEFT = 0;
+   WALL_RIGHT = 1;
+   WALL_UP = 2;
+   WALL_DOWN = 3;
+
    { A generic 'nothing' value for enemy and item uids }
    NOTHING = -1;
 
@@ -29,6 +34,8 @@ const
    REGION_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
    MIN_ROOM_WIDTH = 3;
    MIN_ROOM_HEIGHT = 3;
+   MAX_ROOM_WIDTH = 8;
+   MAX_ROOM_HEIGHT = 8;
 
    { The maximum number of connections a room can have to other rooms }
    MAX_CONNECTIONS = 6;
@@ -261,9 +268,6 @@ var
    room_height: Integer;
    room_x: Integer;
    room_y: Integer;
-   rand_range: Integer;
-   min_pos: Integer;
-   max_pos: Integer;
 begin
    { A room is a space inside a region.  Each dimension of the room is separate.
      The length of width of a room must be at least 4 and at most (region size - 2).
@@ -276,26 +280,20 @@ begin
      maximal space while still allowing room for walls. }
 
    { Create the width of the room }
-   rand_range := (REGION_WIDTH - 2) - MIN_ROOM_WIDTH + 1;
-   room_width := Random(rand_range) + MIN_ROOM_WIDTH;
+   room_width := Random(MAX_ROOM_WIDTH - MIN_ROOM_WIDTH - 1) + MIN_ROOM_WIDTH;
 
    { Create the height of the room }
-   rand_range := (REGION_HEIGHT - 2) - MIN_ROOM_HEIGHT + 1;
-   room_height := Random(rand_range) + MIN_ROOM_HEIGHT;
+   room_height := Random(MAX_ROOM_HEIGHT - MIN_ROOM_HEIGHT - 1) + MIN_ROOM_HEIGHT;
 
    { Pick a room position that places the entire room within the range of 1..REGION_WIDTH-1 in both dimensions
      and place it randomly within the region.  Note that adjacent rooms may not connect directly to each other
      with a straight passage; we'll punt on the passage creation until we carve out the final dungeon. }
 
    { Start with the width }
-   min_pos := 1;
-   max_pos := (REGION_WIDTH - 2) - room_width + 1;
-   room_x := Random(max_pos - min_pos) + min_pos;
+   room_x := (REGION_WIDTH - room_width) div 2;
 
    { Then the height }
-   min_pos := 1;
-   max_pos := (REGION_HEIGHT - 2) - room_height + 1;
-   room_y := Random(max_pos - min_pos) + min_pos;
+   room_y := (REGION_HEIGHT - room_height) div 2;;
 
    region_to_xy(region_idx, region_x, region_y);
    dungeon_regions[region_x][region_y].room_x := room_x;
@@ -819,47 +817,112 @@ end;
 }
 procedure SLACDungeon.carve_between_regions(src_region: Integer; dest_region: Integer; gen: DungeonGenerator);
 var
-   dgt: DungeonRegionType;
-   room_top: Integer;
-   room_left: Integer;
-   region_x, region_y: Integer;
+   src_dgt, dest_dgt: DungeonRegionType;
+   source_wall_dir: Byte;
+   src_room_top, src_room_left, src_room_bottom, src_room_right: Integer;
+   dest_room_top, dest_room_left, dest_room_bottom, dest_room_right: Integer;
+   src_region_x, src_region_y: Integer;
+   dest_region_x, dest_region_y: Integer;
    source_x, source_y: Integer;
    dest_x, dest_y: Integer;
-   intermediate_x, intermediate_y: Integer;
+   cx, cy: Integer;
+   i1x, i1y: Integer;
+   i2x, i2y: Integer;
 begin
-   { Pick a random spot in the source room}
-   gen.get_region(src_region, dgt);
-   gen.region_to_xy(src_region, region_x, region_y);
-   room_top := region_y * REGION_HEIGHT + dgt.room_y;
-   room_left := region_x * REGION_WIDTH + dgt.room_x;
-   get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
-                       room_top + dgt.room_height - 1, source_x, source_y);
 
-   { Pick a random spot in the destination room }
-   gen.get_region(dest_region, dgt);
-   gen.region_to_xy(dest_region, region_x, region_y);
-   room_top := region_y * REGION_HEIGHT + dgt.room_y;
-   room_left := region_x * REGION_WIDTH + dgt.room_x;
-   get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
-                       room_top + dgt.room_height - 1, dest_x, dest_y);
+   { Get the source and destination regions }
+   gen.get_region(src_region, src_dgt);
+   gen.get_region(dest_region, dest_dgt);
+   gen.region_to_xy(src_region, src_region_x, src_region_y);
+   gen.region_to_xy(dest_region, dest_region_x, dest_region_y);
 
-   { Pick one of two intermediate locations - either (source_x, dest_y) or (dest_x, source_y) }
-   case Random(2) of
-      0: begin
-            intermediate_x := source_x;
-            intermediate_y := dest_y;
-         end;
-      1: begin
-            intermediate_x := dest_x;
-            intermediate_y := source_y;
-         end;
+   { Get the source room edges }
+   src_room_top := src_region_y * REGION_HEIGHT + src_dgt.room_y - 1;
+   src_room_left := src_region_x * REGION_WIDTH + src_dgt.room_x - 1;
+   src_room_bottom := src_room_top + src_dgt.room_height;
+   src_room_right := src_room_left + src_dgt.room_width;
+
+   { Get the dest room edges }
+   dest_room_top := dest_region_y * REGION_HEIGHT + dest_dgt.room_y - 1;
+   dest_room_left := dest_region_x * REGION_WIDTH + dest_dgt.room_x - 1;
+   dest_room_bottom := dest_room_top + dest_dgt.room_height;
+   dest_room_right := dest_room_left + dest_dgt.room_width;
+
+   { Determine the wall(s) to be connected and the center point }
+   if src_region_x > dest_region_x then
+   begin
+      source_wall_dir := WALL_LEFT;
+      cx := ((src_room_left - dest_room_right) div 2) + (dest_room_right);
+   end
+   else if src_region_x < dest_region_x then
+   begin
+      source_wall_dir := WALL_RIGHT;
+      cx := ((dest_room_left - src_room_right) div 2) + (src_room_right);
+   end
+   else if src_region_y > dest_region_y then
+   begin
+      source_wall_dir := WALL_UP;
+      cy := ((src_room_top - dest_room_bottom) div 2) + (dest_room_bottom);
+   end
+   else
+   begin
+      source_wall_dir := WALL_DOWN;
+      cy := ((dest_room_top - src_room_bottom) div 2) + (src_room_bottom)
    end;
 
-   { Carve from (source_x, source_y) to (intermediate_x, intermediate_y) }
-   carve_between_xy(source_x, source_y, intermediate_x, intermediate_y);
+   { Find a spot on each wall not in a corner }
+   case source_wall_dir of
+      WALL_UP: begin
+                  source_x := (src_room_right - src_room_left - 2) + src_room_left + 1;
+                  source_y := src_room_top;
+                  dest_x := (dest_room_right - dest_room_left - 2 ) + dest_room_left + 1;
+                  dest_y := dest_room_bottom;
+                  i1x := source_x;
+                  i1y := cy;
+                  i2x := dest_x;
+                  i2y := cy;
+               end;
+      WALL_DOWN: begin
+                  source_x := (src_room_right - src_room_left - 2) + src_room_left + 1;
+                  source_y := src_room_bottom;
+                  dest_x := (dest_room_right - dest_room_left - 2 ) + dest_room_left + 1;
+                  dest_y := dest_room_top;
+                  i1x := source_x;
+                  i1y := cy;
+                  i2x := dest_x;
+                  i2y := cy;
+                 end;
+      WALL_LEFT: begin
+                  source_x := src_room_left;
+                  source_y := (src_room_bottom - src_room_top - 2) + src_room_top + 1;
+                  dest_x := dest_room_right;
+                  dest_y := (dest_room_bottom - dest_room_top - 2) + dest_room_top + 1;
+                  i1x := cx;
+                  i1y := source_y;
+                  i2x := cx;
+                  i2y := dest_y;
+                 end;
+      WALL_RIGHT: begin
+                  source_x := src_room_right;
+                  source_y := (src_room_bottom - src_room_top - 2) + src_room_top + 1;
+                  dest_x := dest_room_left;
+                  dest_y := (dest_room_bottom - dest_room_top - 2) + dest_room_top + 1;
+                  i1x := cx;
+                  i1y := source_y;
+                  i2x := cx;
+                  i2y := dest_y;
+                  end;
+   end;
 
-   { Carve from (intermediate_x, intermediate_y) to (dest_x, dest_y) }
-   carve_between_xy(intermediate_x, intermediate_y, dest_x, dest_y);
+   { Connect a straight line to the middle position}
+   carve_between_xy(source_x, source_y, i1x, i1y);
+
+   { Connect the first middle position to the second }
+   carve_between_xy(i1x, i1y, i2x, i2y);
+
+   { Connect the second middle position to the second wall }
+   carve_between_xy(i2x, i2y, dest_x, dest_y);
+
 end;
 
 { carve_between_xy - carves all of the dungeon spaces between two locations.  The two locations should be
