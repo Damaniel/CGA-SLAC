@@ -47,14 +47,14 @@ begin
             keyRead := readkey;
         end;
 
-        p.get_pos(x, y);
+        d.get_player_pos(x, y);
         moved := False;
 
         { Moving up }
         if (keyRead = #72) and (extendedKey = True) then begin
             sq := d.get_square_type(x, y-1);
             if sq <> SQUARE_WALL then begin
-                p.set_pos(x, y-1);
+                d.set_player_pos(x, y-1);
                 d.light_area(x, y-1);
                 moved := True;
             end;
@@ -64,7 +64,7 @@ begin
         if (keyRead = #80) and (extendedKey = True) then begin
             sq := d.get_square_type(x, y+1);
             if sq <> SQUARE_WALL then begin
-                p.set_pos(x, y+1);
+                d.set_player_pos(x, y+1);
                 d.light_area(x, y+1);
                 moved := True;
             end;
@@ -74,7 +74,7 @@ begin
         if (keyRead = #75) and (extendedKey = True) then begin
             sq := d.get_square_type(x-1, y);
             if sq <> SQUARE_WALL then begin
-                p.set_pos(x-1, y);
+                d.set_player_pos(x-1, y);
                 d.light_area(x-1, y);
                 moved := True;
             end;
@@ -84,7 +84,7 @@ begin
         if (keyRead = #77) and (extendedKey = True) then begin
             sq := d.get_square_type(x+1, y);
             if sq <> SQUARE_WALL then begin
-                p.set_pos(x+1, y);
+                d.set_player_pos(x+1, y);
                 d.light_area(x+1, y);
                 moved := True;
             end;

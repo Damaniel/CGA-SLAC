@@ -127,7 +127,7 @@ begin
 
     if components.render_dungeon = True then
     begin
-        g_player.get_pos(x, y);
+        g_dungeon.get_player_pos(x, y);
         render_dungeon_area(x - 8, y - 6, g_dungeon);
         components.render_dungeon := False;
     end;
@@ -152,6 +152,8 @@ var
     sq_type: Integer;
     dt_x, dt_y: Integer;
     sprite: Integer;
+    enemy: Integer;
+    s: SLACEnemy;
 begin
     tile_y := DUNGEON_AREA_Y;
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
@@ -182,6 +184,13 @@ begin
                         SQUARE_DOWN_STAIRS: sprite := SPRITE_FLOOR;
                     end;
                     tg_tile7(tile_x, tile_y, sprite);
+                    { If an enemy is here, render it }
+                    s := g_enemy_list[d.get_enemy(dt_x, dt_y)];
+                    enemy := s.enemy_idx;
+                    if enemy <> NO_ENEMY then
+                    begin
+                        tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
+                    end;
                 end;
             end;
             tile_x := tile_x + DUNGEON_AREA_TILE_WIDTH;

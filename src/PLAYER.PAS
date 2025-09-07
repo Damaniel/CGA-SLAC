@@ -22,7 +22,6 @@ SLACPlayer=object
     function get_def : Integer;
     function get_spd: Integer;
     function get_luck : Integer;
-    procedure get_pos(var x: byte; var y: Byte);
     procedure set_level(val : Byte);
     procedure set_hp(val: Integer);
     procedure set_xp(val: Longint);
@@ -31,11 +30,8 @@ SLACPlayer=object
     procedure set_def(val: Integer);
     procedure set_spd(val: Integer);
     procedure set_luck(val: Integer);
-    procedure set_pos(x: Byte; y: Byte);
 
 private
-    x_pos: Byte;
-    y_pos: Byte;
     level: Byte;
     hp: Integer;
     xp: Longint;
@@ -110,12 +106,6 @@ begin
     get_luck := luck;
 end;
 
-procedure SLACPlayer.get_pos(var x: Byte; var y: Byte);
-begin
-    x := x_pos;
-    y := y_pos;
-end;
-
 procedure SLACPlayer.set_level(val : Byte);
 begin
     level := val;
@@ -154,12 +144,6 @@ end;
 procedure SLACPlayer.set_luck(val : Integer);
 begin
     luck := val;
-end;
-
-procedure SLACPlayer.set_pos(x: Byte; y: Byte);
-begin
-    x_pos := x;
-    y_pos := y;
 end;
 
 { getBaseHP - returns the base HP value for the specified player level.

@@ -59,6 +59,9 @@ ItemTableEntryType = record
 end;
 
 const
+    { Maximum dungeon depth }
+    NUM_FLOORS =      30;
+
     { Tile IDs }
     SPRITE_HERO =      0;
     SPRITE_BSLIME =    1;
@@ -180,6 +183,14 @@ const
     ITEM_MONEY =       2;
     ITEM_SPECIAL =     3;
 
+    { offsets into the item breakpoints array for each item type }
+    POTION_MIN = 0;
+    POTION_MAX = 447;
+    SCROLL_MIN = 448;
+    SCROLL_MAX = 1135;
+    MONEY_MIN = 1136;
+    MONEY_MAX = 2062;
+
     { Monster data }
     NUM_MONSTERS = 31;
     g_monster_data: array[0..NUM_MONSTERS-1] of MonsterTableEntryType =
@@ -277,6 +288,8 @@ const
           (name: 'Magic Axe';       class: WEAPON_AXE;    min_floor: 23; rarity: 25;
            atk: 55; spd: -8; tid: SPRITE_AXE2)
         );
+    g_weapon_rarity_breakpoints: array[0..NUM_WEAPONS-1] of Integer =
+        (255, 375, 415, 655, 765, 800, 1025, 1125, 1155, 1370, 1465, 1490);
 
     { Armor data }
     NUM_ARMORS = 20;
@@ -323,6 +336,9 @@ const
           (name: 'Ring of Luck';        class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
            spd: 0;   atk: 0;  luck: 25; tid: SPRITE_RING4)
         );
+    g_armor_rarity_breakpoints: array[0..NUM_ARMORS-1] of Integer =
+        (255, 435, 555, 595, 850, 1030, 1150, 1190, 1445, 1625, 1745,
+         1785, 2040, 2220, 2340, 2380, 2412, 2444, 2476, 2508);
 
     { Item data }
     NUM_ITEMS = 19;
@@ -348,6 +364,9 @@ const
       (name: 'Diamond';      class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND),
       (name: 'Orb of Power'; class: ITEM_SPECIAL; min_floor: 30;  rarity: 0;   effect_id: 18; tid: SPRITE_ORB)
     );
+    g_item_rarity_breakpoints: array[0..NUM_ITEMS-1] of Integer =
+        (255, 319, 351, 383, 415, 447, 575,  799, 1023, 1039,
+         1103, 1135, 1390, 1614, 1790, 1918, 2014, 2062, 2062);
 
 implementation
 

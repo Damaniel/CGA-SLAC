@@ -8,6 +8,11 @@ unit Dungeon;
 
 interface
 
+uses
+   Enemy,
+   Globals,
+   Generate;
+
 const
    { The square types that a particular dungeon square can have }
    SQUARE_WALL = 0;
@@ -27,15 +32,15 @@ const
    { Dungeon size definitions }
    DUNGEON_WIDTH = 60;
    DUNGEON_HEIGHT = 60;
-   DUNGEON_GEN_NUM_ROWS = 5;
-   DUNGEON_GEN_NUM_COLS = 5;
+   DUNGEON_GEN_NUM_ROWS = 4;
+   DUNGEON_GEN_NUM_COLS = 4;
    NUM_REGIONS = DUNGEON_GEN_NUM_ROWS * DUNGEON_GEN_NUM_COLS;
    REGION_WIDTH = DUNGEON_WIDTH div DUNGEON_GEN_NUM_COLS;
    REGION_HEIGHT = DUNGEON_WIDTH div DUNGEON_GEN_NUM_ROWS;
    MIN_ROOM_WIDTH = 3;
    MIN_ROOM_HEIGHT = 3;
-   MAX_ROOM_WIDTH = 8;
-   MAX_ROOM_HEIGHT = 8;
+   MAX_ROOM_WIDTH = REGION_WIDTH - 4;
+   MAX_ROOM_HEIGHT = REGION_HEIGHT - 4;
 
    { The maximum number of connections a room can have to other rooms }
    MAX_CONNECTIONS = 6;
@@ -98,6 +103,8 @@ DungeonGenerator=object
       function get_random_connected_neighbor(region: Integer) : Integer;
 end;
 
+PDungeonGenerator=^DungeonGenerator;
+
 { DungeonSquareType - the content of a single carved square of the dungeon}
 DungeonSquareType=record
    flags: Byte;
@@ -108,12 +115,17 @@ end;
 { SLACDungeon - the complete carved dungeon }
 SLACDungeon=object
    procedure Init;
+   procedure generate(gen: PDungeonGenerator; cur_floor: Byte);
    procedure initialize_square(x: Integer; y: Integer);
+   procedure generate_initial_enemies(count: Integer);
+   procedure generate_initial_items(count: Integer);
    procedure add_enemy(x: Integer; y: Integer; uid: Integer);
    procedure add_item(x: Integer; y: Integer; uid: Integer);
    procedure set_square_type(x: Integer; y: Integer; square_type: Byte);
    procedure set_square_seen(x: Integer; y: Integer; seen: Boolean);
    procedure set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
+   procedure set_current_floor(f: Byte);
+   procedure set_player_pos(x: Byte; y: Byte);
    procedure light_area(x: Integer; y: Integer);
    procedure get_room_extents(x: byte; y: Byte; var x1: Byte; var y1: Byte; var x2: Byte; var y2: Byte);
    function get_square_type(x: Integer; y: Integer) : Byte;
@@ -121,20 +133,24 @@ SLACDungeon=object
    function get_square_in_room(x: Integer; y: Integer) : Boolean;
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
-   procedure create_from_gen_data(var gen: DungeonGenerator);
+   function get_current_floor : Byte;
+   procedure create_from_gen_data(gen: PDungeonGenerator);
    procedure get_up_stair_pos(var x: Byte; var y: Byte);
    procedure get_down_stair_pos(var x: Byte; var y: Byte);
+   procedure get_player_pos(var x: Byte; var y: Byte);
    procedure dump;
 
    private
+      floor: Byte;
       up_stair_x, up_stair_y: Byte;
       down_stair_x, down_stair_y: Byte;
+      player_x, player_y: Byte;
       squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
-      procedure add_stairs(gen: DungeonGenerator);
-      procedure generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
+      procedure add_stairs(gen: PDungeonGenerator);
+      procedure generate_unique_connection_list(gen: PDungeonGenerator; var clist: ConnectionListType);
       procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
                                     var room_x: Integer; var room_y: Integer);
-      procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: DungeonGenerator);
+      procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
       procedure carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
 end;
 
@@ -539,6 +555,14 @@ var
    x: Integer;
    y: Integer;
 begin
+   floor := 0;
+   up_stair_x := 0;
+   up_stair_y := 0;
+   down_stair_x := 0;
+   down_stair_y := 0;
+   player_x := 0;
+   player_y := 0;
+
    for x := 0 to DUNGEON_WIDTH - 1 do
    begin
       for y := 0 to DUNGEON_HEIGHT - 1 do
@@ -546,6 +570,27 @@ begin
          initialize_square(x, y);
       end;
    end;
+end;
+
+
+procedure SLACDungeon.generate(gen: PDungeonGenerator; cur_floor: Byte);
+var
+   idx: Integer;
+   e: SLACEnemy;
+begin
+   floor := cur_floor;
+   gen^.Init;
+   gen^.generate;
+   create_from_gen_data(gen);
+   add_stairs(gen);
+   clear_enemy_list;
+
+   generate_initial_enemies(30);
+   {generate_initial_items(10);
+   }
+   player_x := up_stair_x;
+   player_y := up_stair_y;
+   light_area(player_x, player_y);
 end;
 
 { initialize_square : sets the default state for the square at a specified location
@@ -558,6 +603,57 @@ begin
    squares[x][y].flags := $00;
    squares[x][y].enemy_list_idx := NOTHING;
    squares[x][y].item_list_idx := NOTHING;
+end;
+
+procedure SLACDungeon.generate_initial_enemies(count: Integer);
+var
+   legal_location: Boolean;
+   idx: Integer;
+   enemy_x, enemy_y: Integer;
+   enemy_idx: Integer;
+   enemy_list_idx: Integer;
+   d: DungeonSquareType;
+begin
+   { for each enemy:
+      - generate an enemy index
+      - generate a legal location
+      - Get the first available enemy list index
+      - If a spot is open, populate the enemy list with the enemy index
+      - Mark the spot in the dungeon as containing this enemy index
+   }
+   for idx := 0 to count - 1 do
+   begin
+      generate_random_enemy(floor, enemy_idx);
+      legal_location := False;
+      while legal_location = False do
+      begin
+         enemy_x := Random(DUNGEON_WIDTH);
+         enemy_y := Random(DUNGEON_HEIGHT);
+         { If square is a floor with no existing enemy or the player on it, it's legal}
+         if get_square_type(enemy_x, enemy_y) = SQUARE_FLOOR then
+         begin
+            if (enemy_x <> player_x) or (enemy_y <> player_y) then
+            begin
+               d := squares[enemy_x][enemy_y];
+               if d.enemy_list_idx = NO_ENEMY then
+               begin
+                  legal_location := True;
+               end;
+            end;
+         end;
+      end;
+      enemy_list_idx := get_first_available_enemy_slot;
+      if enemy_list_idx <> -1 then
+      begin
+         { Add the enemy to the enemy list, and the list index to the dungeon location}
+         add_new_enemy_at(enemy_list_idx, enemy_idx);
+         add_enemy(enemy_x, enemy_y, enemy_list_idx);
+      end;
+   end;
+end;
+
+procedure SLACDungeon.generate_initial_items(count: Integer);
+begin
 end;
 
 { add_enemy : Places an enemy reference in the square at the specified location
@@ -631,6 +727,32 @@ begin
    end;
 end;
 
+{ set_current_floor: setter for floor }
+procedure SLACDungeon.set_current_floor(f: Byte);
+begin
+   floor := f;
+   if floor < 1 then floor := 1;
+   if floor > NUM_FLOORS then floor := NUM_FLOORS;
+end;
+
+procedure SLACDungeon.set_player_pos(x: Byte; y: Byte);
+begin
+   player_x := x;
+   player_y := y;
+end;
+
+{ get_current_floor: getter for floor }
+function SLACDungeon.get_current_floor : Byte;
+begin
+   get_current_floor := floor;
+end;
+
+procedure SLACDungeon.get_player_pos(var x: Byte; var y: Byte);
+begin
+   x := player_x;
+   y := player_y;
+end;
+
 { get_square_type : gets the square type of the square at the specified location
 
   Parameters:
@@ -694,7 +816,7 @@ end;
     x, y : the location of the square
 
   Returns:
-    the uid of the enemy on the square, or NOTHING if no enemy is present
+    the uid of the enemy on the square, or NO_ENEMY if no enemy is present
 }
 function SLACDungeon.get_enemy(x: Integer; y: Integer) : Shortint;
 begin
@@ -713,13 +835,12 @@ function SLACDungeon.get_item(x: Integer; y: Integer) : Shortint;
 begin
    get_item := squares[x][y]. item_list_idx;
 end;
-
 { create_from_gen_data : converts the generated dungeon map into the final dungeon struct
 
    Parameters:
       var gen: A DungeonGenerator instance
 }
-procedure SLACDungeon.create_from_gen_data(var gen: DungeonGenerator);
+procedure SLACDungeon.create_from_gen_data(gen: PDungeonGenerator);
 var
    { The region to pull the generator/room info from }
    region_x: Integer;
@@ -740,12 +861,12 @@ begin
    { Carve the rooms out of the base dungeon}
    for region_idx := 0 to NUM_REGIONS - 1 do
    begin
-      gen.get_region(region_idx, region);
+      gen^.get_region(region_idx, region);
       { Get the room position and calculate the dungeon offset from it.
          Note that the offsets start one to the left / above the actual room area and
          the index ranges end one to the right / below the room area.  This allows us to draw
          the walls around the room more easily. }
-      gen.region_to_xy(region_idx, region_x, region_y);
+      gen^.region_to_xy(region_idx, region_x, region_y);
       offset_x := region_x * REGION_WIDTH + region.room_x;
       offset_y := region_y * REGION_HEIGHT + region.room_y;
       { Loop through the appropriate region in the dungeon and carve the room}
@@ -769,9 +890,6 @@ begin
       carve_between_regions(clist.connections[connection_idx].source, clist.connections[connection_idx].dest, gen);
    end;
 
-   { Add the stairs }
-   add_stairs(gen);
-
 end;
 
 { generate_unique_connection_list - takes the collection of connections from each region and
@@ -784,7 +902,7 @@ end;
      gen: a copy of the dungeon generator object (to get region info)
      var clist: the assembled list of unique connections
 }
-procedure SLACDungeon.generate_unique_connection_list(gen: DungeonGenerator; var clist: ConnectionListType);
+procedure SLACDungeon.generate_unique_connection_list(gen: PDungeonGenerator; var clist: ConnectionListType);
 var
    idx: Integer;
    idx2: Integer;
@@ -794,7 +912,7 @@ begin
 
    for idx := 0 to NUM_REGIONS - 1 do
    begin
-      gen.get_region(idx, dgt);
+      gen^.get_region(idx, dgt);
       for idx2 :=0 to dgt.num_connected - 1 do
       begin
          if dgt.connected[idx2] > idx then
@@ -815,7 +933,7 @@ end;
      dest_region - the destination region
      gen - the dungeon generator (used to get region info)
 }
-procedure SLACDungeon.carve_between_regions(src_region: Integer; dest_region: Integer; gen: DungeonGenerator);
+procedure SLACDungeon.carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
 var
    src_dgt, dest_dgt: DungeonRegionType;
    source_wall_dir: Byte;
@@ -831,10 +949,10 @@ var
 begin
 
    { Get the source and destination regions }
-   gen.get_region(src_region, src_dgt);
-   gen.get_region(dest_region, dest_dgt);
-   gen.region_to_xy(src_region, src_region_x, src_region_y);
-   gen.region_to_xy(dest_region, dest_region_x, dest_region_y);
+   gen^.get_region(src_region, src_dgt);
+   gen^.get_region(dest_region, dest_dgt);
+   gen^.region_to_xy(src_region, src_region_x, src_region_y);
+   gen^.region_to_xy(dest_region, dest_region_x, dest_region_y);
 
    { Get the source room edges }
    src_room_top := src_region_y * REGION_HEIGHT + src_dgt.room_y - 1;
@@ -990,7 +1108,7 @@ end;
     - gen : the dungeon generator; it contains information about the regions the stairs
             should be located
 }
-procedure SLACDungeon.add_stairs(gen: DungeonGenerator);
+procedure SLACDungeon.add_stairs(gen: PDungeonGenerator);
 var
    dgt: DungeonRegionType;
    room_top, room_left: Integer;
@@ -999,9 +1117,9 @@ var
    up_stair_region, down_stair_region: Integer;
 begin
    { Get a random room position from the up stairs region}
-   up_stair_region := gen.get_up_stair_region;
-   gen.get_region(up_stair_region, dgt);
-   gen.region_to_xy(up_stair_region, region_x, region_y);
+   up_stair_region := gen^.get_up_stair_region;
+   gen^.get_region(up_stair_region, dgt);
+   gen^.region_to_xy(up_stair_region, region_x, region_y);
    room_top := region_y * REGION_HEIGHT + dgt.room_y;
    room_left := region_x * REGION_WIDTH + dgt.room_x;
    get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
@@ -1012,9 +1130,9 @@ begin
    up_stair_y := stair_y;
 
    { Get a random room position from the down stairs region }
-   down_stair_region := gen.get_down_stair_region;
-   gen.get_region(down_stair_region, dgt);
-   gen.region_to_xy(down_stair_region, region_x, region_y);
+   down_stair_region := gen^.get_down_stair_region;
+   gen^.get_region(down_stair_region, dgt);
+   gen^.region_to_xy(down_stair_region, region_x, region_y);
    room_top := region_y * REGION_HEIGHT + dgt.room_y;
    room_left := region_x * REGION_WIDTH + dgt.room_x;
    get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,

@@ -33,6 +33,7 @@ function is_valid_enemy(index: Integer) : Boolean;
 procedure get_enemy_data(index: Integer; var s: SLACEnemy);
 procedure delete_enemy_at(index: Integer);
 procedure add_new_enemy_at(index: Integer; enemy_uid: Integer);
+procedure clear_enemy_list;
 
 implementation
 
@@ -63,6 +64,7 @@ begin
     if g_enemy_list[index].enemy_idx = NO_ENEMY then
     begin
         is_valid_enemy := False;
+    end
     else begin
         is_valid_enemy := True;
     end;
@@ -85,6 +87,16 @@ begin
     g_enemy_list[index].enemy_idx := enemy_uid;
     g_enemy_list[index].cur_hp := g_monster_data[enemy_uid].hp;
     g_enemy_list[index].is_alive := True;
+end;
+
+procedure clear_enemy_list;
+var
+    idx: Integer;
+begin
+    for idx := 0 to MAX_ENEMIES - 1 do
+    begin
+        delete_enemy_at(idx);
+    end;
 end;
 
 end.

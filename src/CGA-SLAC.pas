@@ -15,6 +15,7 @@ uses
   Player,
   Render,
   Enemy,
+  Generate,
   Input;
 
 const
@@ -23,6 +24,7 @@ const
 var
   g_TimerInterval: Word;
   p_x, p_y: Byte;
+  idx, enemy_idx: Integer;
 
 procedure game_init;
 begin
@@ -39,19 +41,16 @@ begin
 end;
 
 begin
+
   Randomize;
   game_init;
   g_player.Init;
-  g_generator.Init;
-  g_generator.generate;
-  g_dungeon.create_from_gen_data(g_generator);
+  g_dungeon.Init;
+  g_dungeon.generate(@g_generator, 1);
+
   g_render_components.render_dungeon := True;
   g_render_components.render_interface := True;
   g_render_components.render_interface_values := True;
-
-  g_dungeon.get_up_stair_pos(p_x, p_y);
-  g_player.set_pos(p_x, p_y);
-  g_dungeon.light_area(p_x, p_y);
 
   while g_exit_game = False do
   begin
@@ -63,4 +62,6 @@ begin
   end;
 
   game_cleanup;
+
+
 end.
