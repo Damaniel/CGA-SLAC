@@ -27,6 +27,15 @@ const
     DUNGEON_AREA_NUM_H_TILES = DUNGEON_AREA_PX_WIDTH div DUNGEON_AREA_TILE_WIDTH;
     DUNGEON_AREA_NUM_V_TILES = DUNGEON_AREA_PX_HEIGHT div DUNGEON_AREA_TILE_HEIGHT;
 
+    PLAYER_HP_X = 12;
+    PLAYER_HP_Y = 36;
+    PLAYER_HP_W = 31;
+    PLAYER_HP_H =  3;
+    PLAYER_XP_X = 12;
+    PLAYER_XP_Y = 44;
+    PLAYER_XP_W = 31;
+    PLAYER_XP_H =  3;
+
     CLEAR_ALL = 0;
     SET_ALL = 1;
 type
@@ -50,11 +59,11 @@ procedure adjust_all_render_components(var components: RenderComponentsType; com
 procedure render_init;
 procedure render_cleanup;
 procedure render_components(var components: RenderComponentsType);
-procedure render_dungeon_area(left: Integer; top: Integer; var d: SLACDungeon);
+procedure render_dungeon_area(left: Integer; top: Integer; d: PSLACDungeon);
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 procedure render_text_box;
 procedure render_interface;
-procedure render_interface_values(var p : SLACPlayer);
+procedure render_interface_values(p : PSLACPlayer);
 
 implementation
 
@@ -121,14 +130,14 @@ begin
 
     if components.render_interface_values = True then
     begin
-        render_interface_values(g_player);
+        render_interface_values(@g_player);
         components.render_interface_values := False;
     end;
 
     if components.render_dungeon = True then
     begin
         g_dungeon.get_player_pos(x, y);
-        render_dungeon_area(x - 8, y - 6, g_dungeon);
+        render_dungeon_area(x - 8, y - 6, @g_dungeon);
         components.render_dungeon := False;
     end;
 end;
@@ -145,7 +154,7 @@ end;
   extend beyond the width/height of the dungeon.  In both the <0 and >(width or height) case,
   we'll render fog of war by default.
 }
-procedure render_dungeon_area(left: Integer; top: Integer; var d: SLACDungeon);
+procedure render_dungeon_area(left: Integer; top: Integer; d: PSLACDungeon);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
@@ -171,12 +180,12 @@ begin
             end
             else begin
                 { Draw fog of war if square isn't seen yet }
-                if d.get_square_seen(dt_x, dt_y) = False then
+                if d^.get_square_seen(dt_x, dt_y) = False then
                 begin
                     render_fog_of_war(x, y, tile_x, tile_y);
                 end
                 else begin
-                    sq_type := d.get_square_type(dt_x, dt_y);
+                    sq_type := d^.get_square_type(dt_x, dt_y);
                     case sq_type of
                         SQUARE_WALL: sprite := SPRITE_WALL1;
                         SQUARE_FLOOR: sprite := SPRITE_BLANK;
@@ -185,7 +194,7 @@ begin
                     end;
                     tg_tile7(tile_x, tile_y, sprite);
                     { If an enemy is here, render it }
-                    s := g_enemy_list[d.get_enemy(dt_x, dt_y)];
+                    s := g_enemy_list[d^.get_enemy(dt_x, dt_y)];
                     enemy := s.enemy_idx;
                     if enemy <> NO_ENEMY then
                     begin
@@ -281,39 +290,50 @@ end;
   Parameters:
     - p: an instance of SLACPlayer (that represents the current player)
 }
-procedure render_interface_values(var p: SLACPlayer);
+procedure render_interface_values(p: PSLACPlayer);
 var
     s: string[10];
+    hp_w, xp_w: Integer;
+    hp_pct, xp_pct: Integer;
+    next_level: Longint;
 begin
     { Floor }
     g_font^.outTextRight(42, 19, '1', 15);
     { Level }
-    Str(p.get_level, s);
+    Str(p^.get_level, s);
     g_font^.outTextRight(42, 27, s, 15);
+
     { Health bar }
+    {pct is a range from 0 to 100 - e.g 75 / 100HP = 7500 / 100 = 75}
+    hp_pct := (p^.get_hp * 100) div (p^.get_max_hp);
+    hp_w :=  (hp_pct * PLAYER_HP_W) div 100;
+    tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, 4);
 
     { XP bar }
+    next_level := get_xp_for_next_level(p^.get_level);
+    xp_pct := (p^.get_xp * 100) div next_level;
+    xp_w := (xp_pct * PLAYER_XP_W) div 100;
+    tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, 2);
 
     { Money }
-    Str(p.get_money, s);
+    Str(p^.get_money, s);
     g_font^.outTextRight(42, 51, s, 15);
 
     { Atk }
-    Str(p.get_atk, s);
+    Str(p^.get_atk, s);
     g_font^.outTextRight(21, 67, s, 15);
 
     { Def }
-    Str(p.get_def, s);
+    Str(p^.get_def, s);
     g_font^.outTextRight(21, 75, s, 15);
 
     { Spd }
-    Str(p.get_spd, s);
+    Str(p^.get_spd, s);
     g_font^.outTextRight(44, 67, s, 15);
 
     { Luck }
-    Str(p.get_luck, s);
+    Str(p^.get_luck, s);
     g_font^.outTextRight(44, 75, s, 15);
-
 end;
 
 end.

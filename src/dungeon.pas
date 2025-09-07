@@ -104,6 +104,7 @@ DungeonGenerator=object
 end;
 
 PDungeonGenerator=^DungeonGenerator;
+PSLACDungeon=^SLACDungeon;
 
 { DungeonSquareType - the content of a single carved square of the dungeon}
 DungeonSquareType=record
