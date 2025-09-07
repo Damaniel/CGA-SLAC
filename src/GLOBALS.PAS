@@ -353,7 +353,7 @@ const
          1785, 2040, 2220, 2340, 2380, 2412, 2444, 2476, 2508);
 
     { Item data }
-    NUM_ITEMS = 19;
+    NUM_ITEMS = 18;
     g_item_data: array[0..NUM_ITEMS-1] of ItemTableEntryType =
     (
       (name: 'Heal 1';       class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
@@ -373,12 +373,12 @@ const
       (name: 'Gold';         class: ITEM_MONEY;   min_floor: 5;   rarity: 176; effect_id: 14; tid: SPRITE_GOLD),
       (name: 'Ruby';         class: ITEM_MONEY;   min_floor: 8;   rarity: 128; effect_id: 15; tid: SPRITE_RUBY),
       (name: 'Emerald';      class: ITEM_MONEY;   min_floor: 12;  rarity: 96;  effect_id: 16; tid: SPRITE_EMERALD),
-      (name: 'Diamond';      class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND),
-      (name: 'Orb of Power'; class: ITEM_SPECIAL; min_floor: 30;  rarity: 0;   effect_id: 18; tid: SPRITE_ORB)
+      (name: 'Diamond';      class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND)
     );
+
     g_item_rarity_breakpoints: array[0..NUM_ITEMS-1] of Integer =
         (255, 319, 351, 383, 415, 447, 575,  799, 1023, 1039,
-         1103, 1135, 1390, 1614, 1790, 1918, 2014, 2062, 2062);
+         1103, 1135, 1390, 1614, 1790, 1918, 2014, 2062);
 
     g_xp_required: array[0..MAX_PLAYER_LEVEL - 1] of Longint =
         (     0,       5,      12,      27,      49,      80,     130,     200,     290,     400,

@@ -8,29 +8,34 @@ uses
     Globals;
 
 const
+    { The types of drops that can exist (item, weapon, armor) }
     GEN_WEAPON_TYPE = 0;
     GEN_ARMOR_TYPE = 1;
     GEN_ITEM_TYPE = 2;
     NUM_GEN_TYPES = 3;
 
     { There's a 25% chance of rolling an enemy 1-2 levels out of depth }
-    FIRST_OOD_ODDS = 25;
+    FIRST_ENEMY_OOD_ODDS = 25;
     { There's a 2.5% chance (10% of 25%) chance of rolling an enemy 3-4 levels out of depth }
-    SECOND_OOD_ODDS = 10;
+    SECOND_ENEMY_OOD_ODDS = 10;
 
-    { How many floors above the current one is the cutoff for the low end of the enemy range? }
+    { How many floors below the current one is the cutoff for the low end of the enemy range? }
     MIN_FLOOR_CUTOFF = 6;
 
-    { How many floors to add to the maximum floor level if an out of depth check is triggered }
+    { How many floors to add to the maximum floor depth if an out of depth check is triggered }
     FIRST_OOD_FLOOR_DIFF = 2;
     SECOND_OOD_FLOOR_DIFF = 4;
 
+    { How many times should we attempt to generate a drop before just picking a default? }
     MAX_GENERATE_ATTEMPTS = 50;
 
+    { The chance that any piece of equipment will get +1 to the total plus mod }
     PLUS_MOD_CHANCE = 15;
 type
 
-GenItemType=record
+{ A generated drop.  It has a type (item, weapon, armor), the offset into the relevant drop table,
+  the quantity (only for money) and a plus mod (only for equipment) }
+GenDropType=record
     item_type: Integer;
     item_idx: Integer;
     quantity: Integer;
@@ -38,14 +43,12 @@ GenItemType=record
 end;
 
 procedure generate_random_enemy(floor: Integer; var enemy_idx: Integer);
-procedure generate_random_drop(floor: Integer; var gen_item: GenItemType);
+procedure generate_random_drop(floor: Integer; var gen_drop: GenDropType);
 procedure generate_random_item(floor: Integer; var item_idx: Integer; var quant: Integer);
 procedure generate_random_weapon(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
 procedure generate_random_armor(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
-procedure dump_item(i: GenItemType);
-function get_item_at_breakpoint(idx: Integer) : Integer;
-function get_weapon_at_breakpoint(idx: Integer) : Integer;
-function get_armor_at_breakpoint(idx: Integer) : Integer;
+procedure dump_item(i: GenDropType);
+function get_drop_at_breakpoint(r_table: array of Integer; idx: Integer) : Integer;
 function gen_check(floor: Integer; min_floor: Integer) : Boolean;
 function get_plus_mod_val : Integer;
 
@@ -72,7 +75,6 @@ begin
     end
     else begin
         idx := 0;
-
         while (floor - g_monster_data[idx].min_floor > MIN_FLOOR_CUTOFF) and (idx <= NUM_MONSTERS - 2) do
         begin
             idx := idx + 1;
@@ -90,13 +92,13 @@ begin
 
 
     { ood_index is the strongest enemy 2 or fewer levels higher than the current floor }
-    if Random(100) < FIRST_OOD_ODDS then begin
+    if Random(100) < FIRST_ENEMY_OOD_ODDS then begin
         idx := max_index;
         while (g_monster_data[idx].min_floor - floor <= FIRST_OOD_FLOOR_DIFF) and (idx <= NUM_MONSTERS - 2) do
         begin
             idx := idx + 1;
         end;
-        if Random(100) < SECOND_OOD_ODDS then begin
+        if Random(100) < SECOND_ENEMY_OOD_ODDS then begin
             while (g_monster_data[idx].min_floor - floor <= SECOND_OOD_FLOOR_DIFF) and (idx <= NUM_MONSTERS - 2) do
             begin
                 idx := idx + 1;
@@ -104,7 +106,6 @@ begin
         end;
         max_index := idx - 1;
     end;
-
 
     { If the end of the range includes Megalith, remove him}
     if max_index > NUM_MONSTERS - 2 then begin
@@ -116,7 +117,13 @@ begin
 
 end;
 
-procedure generate_random_drop(floor: Integer; var gen_item: GenItemType);
+{ generate_random_drop - creates an item suitable for the specified floor
+
+  Parameters:
+    floor: the floor to use to determine a suitable drop type
+    var gen_drop: details about the drop (type, any quantity, any +X value)
+}
+procedure generate_random_drop(floor: Integer; var gen_drop: GenDropType);
 var
     item_type: Integer;
     item_idx: Integer;
@@ -129,30 +136,40 @@ begin
     if (r >= 15) and (r < 50) then item_type := GEN_ARMOR_TYPE;
     if (r >= 50) then item_type := GEN_ITEM_TYPE;
 
-    gen_item.item_type := item_type;
+    { Set the drop type }
+    gen_drop.item_type := item_type;
+    { Create the drop + quantity or plus modifier }
     case item_type of
         GEN_WEAPON_TYPE: begin
                             generate_random_weapon(floor, item_idx, val);
-                            gen_item.plus_mod := val;
+                            gen_drop.plus_mod := val;
                         end;
         GEN_ARMOR_TYPE:  begin
                             generate_random_armor(floor, item_idx, val);
-                            gen_item.plus_mod := val;
+                            gen_drop.plus_mod := val;
                          end;
         GEN_ITEM_TYPE:   begin
                             generate_random_item(floor, item_idx, val);
-                            gen_item.quantity := val;
+                            gen_drop.quantity := val;
                          end;
     end;
-    gen_item.item_idx := item_idx;
+    { Set the index into the appropriate drop table }
+    gen_drop.item_idx := item_idx;
 end;
 
-{ generate_random_item - create an arbitrary item }
+{ generate_random_item - create an arbitrary item
+
+  Parameters:
+    floor: the floor to use to determine a suitable item type
+    var item_idx: the offset into the item drop table
+    var quant: the item quantity (1 for non-currency, 1 or more for currency)
+}
 procedure generate_random_item(floor: Integer; var item_idx: Integer; var quant: Integer);
 var
     i, r: Integer;
     gen_idx: Integer;
     generated: Boolean;
+    mult: Integer;
 begin
     { Repeat until item generated or 50 iterations have occurred}
     generated := False;
@@ -164,8 +181,9 @@ begin
         { Roll a random between 0 and the highest breakpoint value}
         r := Random(g_item_rarity_breakpoints[NUM_ITEMS - 1]);
         { Find the item that's represented by the random }
-        i := get_item_at_breakpoint(r);
+        i := get_drop_at_breakpoint(g_item_rarity_breakpoints, r);
 
+        { Check to see if the item meets the depth requirements }
         generated := gen_check(floor, g_item_data[i].min_floor);
         if generated = True then
         begin
@@ -174,6 +192,7 @@ begin
         gen_idx := gen_idx + 1;
     end;
 
+    { If nothing to generate was found, then generate a default item }
     if generated = False then
     begin
         item_idx := DEFAULT_ITEM_IDX; { Copper coin }
@@ -186,13 +205,30 @@ begin
     }
     if g_item_data[i].class = ITEM_MONEY then
     begin
-        quant := (Random(100) * floor) + 1;
+        case g_item_data[g_item_data].tid of
+            SPRITE_COPPER: mult := 1;
+            SPRITE_SILVER: mult := 5;
+            SPRITE_GOLD: mult := 10;
+            SPRITE_RUBY: mult := 25;
+            SPRITE_EMERALD: mult := 50;
+            SPRITE_DIAMOND: mult := 100;
+        else
+            mult := 1;
+        end;
+        quant := (Random(10) * floor * mult) + 1;
     end
     else begin
         quant := 1;
     end;
 end;
 
+{ generate_random_weapon - create an arbitrary weapon
+
+  Parameters:
+    floor: the floor to use to determine a suitable weapon type
+    var item_idx: the offset into the weapon drop table
+    var plus_mod: the plus modifier (0 to 5) for the weapon
+}
 procedure generate_random_weapon(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
 var
     i, r: Integer;
@@ -209,8 +245,9 @@ begin
         { Roll a random between 0 and the highest breakpoint value}
         r := Random(g_weapon_rarity_breakpoints[NUM_WEAPONS - 1]);
         { Find the weapon that's represented by the random }
-        i := get_weapon_at_breakpoint(r);
+        i := get_drop_at_breakpoint(g_weapon_rarity_breakpoints, r);
 
+        { Check to see if the item meets the depth requirements }
         generated := gen_check(floor, g_weapon_data[i].min_floor);
         if generated = True then
         begin
@@ -219,6 +256,7 @@ begin
         gen_idx := gen_idx + 1;
     end;
 
+    { If nothing to generate was found then generate a default weapon }
     if generated = False then
     begin
         item_idx := DEFAULT_WEAPON_IDX; { Wooden Dagger }
@@ -227,6 +265,13 @@ begin
     plus_mod := get_plus_mod_val;
 end;
 
+{ generate_random_armor - create an arbitrary piece of armor
+
+  Parameters:
+    floor: the floor to use to determine a suitable armor type
+    var item_idx: the offset into the armor drop table
+    var plus_mod: the plus modifier (0 to 5) for the armor
+}
 procedure generate_random_armor(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
 var
     i, r: Integer;
@@ -243,8 +288,9 @@ begin
         { Roll a random between 0 and the highest breakpoint value}
         r := Random(g_armor_rarity_breakpoints[NUM_ARMORS - 1]);
         { Find the weapon that's represented by the random }
-        i := get_armor_at_breakpoint(r);
+        i := get_drop_at_breakpoint(g_armor_rarity_breakpoints, r);
 
+        { Check to see if the item meets the depth requirements }
         generated := gen_check(floor, g_armor_data[i].min_floor);
         if generated = True then
         begin
@@ -253,6 +299,7 @@ begin
         gen_idx := gen_idx + 1;
     end;
 
+    { If nothing to generate was found then generate a default armor }
     if generated = False then
     begin
         item_idx := DEFAULT_ARMOR_IDX; { Wood Shield }
@@ -261,6 +308,11 @@ begin
     plus_mod := get_plus_mod_val;
 end;
 
+{ get_plus_mod_val - roll a +n modifier (a value between 0 and 5) based on an
+                     odds value for each additional +1
+
+   Returns: the plus value in the range [0, 5]
+}
 function get_plus_mod_val : Integer;
 var
     plus_mod: Integer;
@@ -284,6 +336,17 @@ begin
     get_plus_mod_val := plus_mod;
 end;
 
+{ gen_check: Determine if a drop can appear on the specified floor.  This includes
+             an additional out of depth (OOD) check that can allow stronger drops not
+             normally able to drop at a depth to do so with lower odds
+
+  Parameters:
+    floor: the floor the drop would be generated
+    min_floor: the minimum floor the drop can generate on
+
+  Returns:
+    True if the drop should be generated, False otherwise
+}
 function gen_check(floor: Integer; min_floor: Integer) : Boolean;
 var
     floor_delta: Integer;
@@ -329,64 +392,35 @@ begin
     end;
 end;
 
-function get_item_at_breakpoint(idx: Integer) : Integer;
+{ get_drop_at_breakpoint - converts a value from a drop table in the rarity range from
+                           [0, <sum of all item rarities>] to a drop index
+
+  Parameters:
+    idx: an index into the rarity range table
+
+  Returns:
+    The drop associated with that portion of the rarity range
+}
+function get_drop_at_breakpoint(r_table: array of Integer; idx: Integer) : Integer;
 var
     c: Integer;
 begin
-    if (idx < 0) or (idx > g_item_rarity_breakpoints[NUM_ITEMS - 1]) then
+    if (idx < 0) or (idx > r_table[High(r_table)]) then
     begin
-        get_item_at_breakpoint := NOTHING;
+        get_drop_at_breakpoint := NOTHING;
     end
     else begin
-        for c := 0 to NUM_ITEMS - 1 do
+        for c := 0 to High(r_table) do
         begin
-            if idx <= g_item_rarity_breakpoints[c] then begin
-                get_item_at_breakpoint := c;
+            if idx < r_table[c] then begin
+                get_drop_at_breakpoint := c;
                 break;
             end;
         end;
     end;
 end;
 
-function get_weapon_at_breakpoint(idx: Integer) : Integer;
-var
-    c: Integer;
-begin
-    if (idx < 0) or (idx > g_weapon_rarity_breakpoints[NUM_WEAPONS - 1]) then
-    begin
-        get_weapon_at_breakpoint := NOTHING;
-    end
-    else begin
-        for c := 0 to NUM_WEAPONS - 1 do
-        begin
-            if idx <= g_weapon_rarity_breakpoints[c] then begin
-                get_weapon_at_breakpoint := c;
-                break;
-            end;
-        end;
-    end;
-end;
-
-function get_armor_at_breakpoint(idx: Integer) : Integer;
-var
-    c: Integer;
-begin
-    if (idx < 0) or (idx > g_armor_rarity_breakpoints[NUM_ARMORS - 1]) then
-    begin
-        get_armor_at_breakpoint := NOTHING;
-    end
-    else begin
-        for c := 0 to NUM_ARMORS - 1 do
-        begin
-            if idx <= g_armor_rarity_breakpoints[c] then begin
-                get_armor_at_breakpoint := c;
-                break;
-            end;
-        end;
-    end;
-end;
-
-procedure dump_item(i: GenItemType);
+procedure dump_item(i: GenDropType);
 begin
     case i.item_type of
         GEN_WEAPON_TYPE: begin

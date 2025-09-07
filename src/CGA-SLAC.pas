@@ -6,6 +6,8 @@
 }
 program CGASLAC;
 
+{$P+}
+
 uses
   jfunc,    { 3rd party }
   timer,    { 3rd party }
@@ -24,7 +26,7 @@ const
 var
   g_TimerInterval: Word;
   idx: Integer;
-  gen: GenItemType;
+  gen: GenDropType;
 
 procedure game_init;
 begin
@@ -44,6 +46,13 @@ begin
 
   Randomize;
 
+  for idx := 1 to 15 do
+  begin
+    generate_random_drop(22, gen);
+    dump_item(gen);
+  end;
+
+{
   game_init;
   g_player.Init;
   g_dungeon.Init;
@@ -61,5 +70,5 @@ begin
   end;
 
   game_cleanup;
-
+}
 end.
