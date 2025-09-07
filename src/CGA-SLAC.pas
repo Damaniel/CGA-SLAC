@@ -23,8 +23,8 @@ const
 
 var
   g_TimerInterval: Word;
-  p_x, p_y: Byte;
-  idx, enemy_idx: Integer;
+  idx: Integer;
+  gen: GenItemType;
 
 procedure game_init;
 begin
@@ -43,14 +43,13 @@ end;
 begin
 
   Randomize;
+
   game_init;
   g_player.Init;
   g_dungeon.Init;
   g_dungeon.generate(@g_generator, 1);
 
-  g_render_components.render_dungeon := True;
-  g_render_components.render_interface := True;
-  g_render_components.render_interface_values := True;
+  adjust_all_render_components(g_render_components, SET_ALL);
 
   while g_exit_game = False do
   begin
@@ -62,6 +61,5 @@ begin
   end;
 
   game_cleanup;
-
 
 end.

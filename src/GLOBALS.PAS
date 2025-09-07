@@ -194,8 +194,17 @@ const
     MONEY_MIN = 1136;
     MONEY_MAX = 2062;
 
+    { The item that's generated if the generator fails to come up with one }
+    DEFAULT_ITEM_IDX = 12;
+    DEFAULT_WEAPON_IDX = 0;
+    DEFAULT_ARMOR_IDX = 0;
+
+    { A generic 'nothing' value for enemy and item uids }
+    NOTHING = -1;
+
     { Monster data }
     NUM_MONSTERS = 31;
+
     g_monster_data: array[0..NUM_MONSTERS-1] of MonsterTableEntryType =
         (
           (name: 'Blue Slime';  min_floor: 1;  hp: 5; atk: 5; def: 5; spd: 100;

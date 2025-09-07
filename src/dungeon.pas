@@ -26,9 +26,6 @@ const
    WALL_UP = 2;
    WALL_DOWN = 3;
 
-   { A generic 'nothing' value for enemy and item uids }
-   NOTHING = -1;
-
    { Dungeon size definitions }
    DUNGEON_WIDTH = 60;
    DUNGEON_HEIGHT = 60;
@@ -585,10 +582,8 @@ begin
    create_from_gen_data(gen);
    add_stairs(gen);
    clear_enemy_list;
-
-   generate_initial_enemies(30);
-   {generate_initial_items(10);
-   }
+   generate_initial_enemies(20);
+   {generate_initial_items(10);}
    player_x := up_stair_x;
    player_y := up_stair_y;
    light_area(player_x, player_y);
