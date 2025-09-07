@@ -205,7 +205,7 @@ begin
     }
     if g_item_data[i].class = ITEM_MONEY then
     begin
-        case g_item_data[g_item_data].tid of
+        case g_item_data[i].tid of
             SPRITE_COPPER: mult := 1;
             SPRITE_SILVER: mult := 5;
             SPRITE_GOLD: mult := 10;
@@ -420,6 +420,11 @@ begin
     end;
 end;
 
+{ dump_item - writes the name of an item as seen by the player
+
+  Parameters:
+    i: the item to dump
+}
 procedure dump_item(i: GenDropType);
 begin
     case i.item_type of

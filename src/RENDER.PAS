@@ -18,6 +18,109 @@ uses
     Dungeon;
 
 const
+    { Used by adjust_all_render_components, to either set or clear all components at once }
+    CLEAR_ALL = 0;
+    SET_ALL = 1;
+
+    { Colors }
+    COLOR_GREEN = 2;
+    COLOR_CYAN = 3;
+    COLOR_RED = 4;
+    COLOR_MAGENTA = 5;
+    COLOR_YELLOW = 14;
+    COLOR_WHITE = 15;
+
+    { ------ UI constants ------ }
+
+    { The main window area - outside border and crossing lines }
+    GAME_AREA_X1 = 1;
+    GAME_AREA_Y1 = 0;
+    GAME_AREA_X2 = 158;
+    GAME_AREA_Y2 = 99;
+    { The separator between the status area and the dungeon area }
+    GAME_LR_SEP_X = 45;
+    GAME_LR_SEP_Y1 = 0;
+    GAME_LR_SEP_Y2 = 99;
+    { The separator between the status area and the enemy / text box area}
+    GAME_TEXT_SEP_X1 = 1;
+    GAME_TEXT_SEP_X2 = 158;
+    GAME_TEXT_SEP_Y = 85;
+    { The separator that creates the region where the game title goes}
+    GAME_TITLE_SEP_X1 = 1;
+    GAME_TITLE_SEP_X2 = 45;
+    GAME_TITLE_SEP_Y = 14;
+    { The separator that separates the stat section from the status section }
+    GAME_ENEMY_SEP_X1 = 1;
+    GAME_ENEMY_SEP_X2 = 45;
+    GAME_ENEMY_SEP_Y = 61;
+    { The cyan outer rectangle up in the title area }
+    TITLE_OUTER_BOX_X1 = 2;
+    TITLE_OUTER_BOX_Y1 = 1;
+    TITLE_OUTER_BOX_X2 = 44;
+    TITLE_OUTER_BOX_Y2 = 13;
+    { The magentia inner rectangle up in the title area }
+    TITLE_INNER_BOX_X1 = 3;
+    TITLE_INNER_BOX_Y1 = 2;
+    TITLE_INNER_BOX_X2 = 43;
+    TITLE_INNER_BOX_Y2 = 12;
+    { The 4 pixels making up the 2 little lines next to the letters CGA-SLAC }
+    TITLE_PX1_X = 5;
+    TITLE_PX2_X = 6;
+    TITLE_PX3_X = 40;
+    TITLE_PX4_X = 41;
+    TITLE_PX_Y = 7;
+    { The 3 text segments of the title text ('CG', 'A-S', 'LAC')}
+    TITLE_TEXT1_X = 8;
+    TITLE_TEXT2_X = 16;
+    TITLE_TEXT3_X = 28;
+    TITLE_TEXT_Y = 5;
+    { The icons used for main status (depth, level, health, xp, money) }
+    STATUS_DEPTH_ICON_X = 3;
+    STATUS_DEPTH_ICON_Y = 18;
+    STATUS_LEVEL_ICON_X = 3;
+    STATUS_LEVEL_ICON_Y = 26;
+    STATUS_HEALTH_ICON_X = 3;
+    STATUS_HEALTH_ICON_Y = 34;
+    STATUS_XP_ICON_X = 3;
+    STATUS_XP_ICON_Y = 42;
+    STATUS_MONEY_ICON_X = 3;
+    STATUS_MONEY_ICON_Y = 50;
+    { The icons used for player stats (atk, def, speed, luck) }
+    STAT_ATK_ICON_X = 3;
+    STAT_ATK_ICON_Y = 66;
+    STAT_DEF_ICON_X = 3;
+    STAT_DEF_ICON_Y = 74;
+    STAT_SPEED_ICON_X = 24;
+    STAT_SPEED_ICON_Y = 66;
+    STAT_LUCK_ICON_X = 24;
+    STAT_LUCK_ICON_Y = 74;
+    { The HP box (just the box, not the bar inside that shows current HP) }
+    PLAYER_HP_BOX_X1 = 11;
+    PLAYER_HP_BOX_Y1 = 35;
+    PLAYER_HP_BOX_X2 = 43;
+    PLAYER_HP_BOX_Y2 = 39;
+    { The XP box (just the box, not the bar inside that shows current XP) }
+    PLAYER_XP_BOX_X1 = 11;
+    PLAYER_XP_BOX_Y1 = 43;
+    PLAYER_XP_BOX_X2 = 43;
+    PLAYER_XP_BOX_Y2 = 47;
+    { The locations of the text for the various status values }
+    STATUS_DEPTH_TEXT_X = 42;
+    STATUS_DEPTH_TEXT_Y = 19;
+    STATUS_LEVEL_TEXT_X = 42;
+    STATUS_LEVEL_TEXT_Y = 27;
+    STATUS_MONEY_TEXT_X = 42;
+    STATUS_MONEY_TEXT_Y = 51;
+    { The locations of the text for the player stat values }
+    STAT_ATK_TEXT_X = 21;
+    STAT_ATK_TEXT_Y = 67;
+    STAT_DEF_TEXT_X = 21;
+    STAT_DEF_TEXT_Y = 75;
+    STAT_SPEED_TEXT_X = 44;
+    STAT_SPEED_TEXT_Y = 67;
+    STAT_LUCK_TEXT_X = 44;
+    STAT_LUCK_TEXT_Y = 75;
+    { The dungeon area }
     DUNGEON_AREA_X = 46;
     DUNGEON_AREA_Y = 1;
     DUNGEON_AREA_PX_WIDTH = 112;
@@ -26,7 +129,7 @@ const
     DUNGEON_AREA_TILE_HEIGHT = 7;
     DUNGEON_AREA_NUM_H_TILES = DUNGEON_AREA_PX_WIDTH div DUNGEON_AREA_TILE_WIDTH;
     DUNGEON_AREA_NUM_V_TILES = DUNGEON_AREA_PX_HEIGHT div DUNGEON_AREA_TILE_HEIGHT;
-
+    { The player HP and XP bar interior regions}
     PLAYER_HP_X = 12;
     PLAYER_HP_Y = 36;
     PLAYER_HP_W = 31;
@@ -35,9 +138,6 @@ const
     PLAYER_XP_Y = 44;
     PLAYER_XP_W = 31;
     PLAYER_XP_H =  3;
-
-    CLEAR_ALL = 0;
-    SET_ALL = 1;
 type
 
 RenderComponentsType=record
@@ -208,7 +308,8 @@ begin
     end;
 
     { Render the player.  The player is always located in the middle of the play area. }
-    tg_tile7(DUNGEON_AREA_X + 56, DUNGEON_AREA_Y + 42, SPRITE_HERO);
+    tg_tile7(DUNGEON_AREA_X + (DUNGEON_AREA_PX_WIDTH div 2),
+             DUNGEON_AREA_Y + (DUNGEON_AREA_PX_HEIGHT div 2), SPRITE_HERO);
 
 end;
 
@@ -249,40 +350,41 @@ end;
 procedure render_interface;
 begin
     { The main window }
-    tg_rectangle(1, 0, 158, 99, 15);
-    tg_bar(45, 0, 45, 99, 15);
-    tg_bar(1, 85, 158, 85, 15);
-    tg_bar(1, 14, 45, 14, 15);
-    tg_bar(1, 61, 45, 61, 15);
+    tg_rectangle(GAME_AREA_X1, GAME_AREA_Y1, GAME_AREA_X2, GAME_AREA_Y2, COLOR_WHITE);
+    tg_bar(GAME_LR_SEP_X, GAME_LR_SEP_Y1, GAME_LR_SEP_X, GAME_LR_SEP_Y2, COLOR_WHITE);
+    tg_bar(GAME_TEXT_SEP_X1, GAME_TEXT_SEP_Y, GAME_TEXT_SEP_X2, GAME_TEXT_SEP_Y, COLOR_WHITE);
+    tg_bar(GAME_TITLE_SEP_X1, GAME_TITLE_SEP_Y, GAME_TITLE_SEP_X2, GAME_TITLE_SEP_Y, COLOR_WHITE);
+    tg_bar(GAME_ENEMY_SEP_X1, GAME_ENEMY_SEP_Y, GAME_ENEMY_SEP_X2, GAME_ENEMY_SEP_Y, COLOR_WHITE);
 
     { The CGA-SLAC stuff }
-    tg_rectangle(2, 1, 44, 13, 3);
-    tg_rectangle(3, 2, 43, 12, 5);
-    tg_putPixel(5, 7, 5);
-    tg_putPixel(6, 7, 5);
-    tg_putPixel(40, 7, 15);
-    tg_putPixel(41, 7, 15);
+    tg_rectangle(TITLE_OUTER_BOX_X1, TITLE_OUTER_BOX_Y1, TITLE_OUTER_BOX_X2, TITLE_OUTER_BOX_Y2, COLOR_CYAN);
+    tg_rectangle(TITLE_INNER_BOX_X1, TITLE_INNER_BOX_Y1, TITLE_INNER_BOX_X2, TITLE_INNER_BOX_Y2, COLOR_MAGENTA);
+    tg_putPixel(TITLE_PX1_X, TITLE_PX_Y, COLOR_MAGENTA);
+    tg_putPixel(TITLE_PX2_X, TITLE_PX_Y, COLOR_MAGENTA);
+    tg_putPixel(TITLE_PX3_X, TITLE_PX_Y, COLOR_WHITE);
+    tg_putPixel(TITLE_PX4_X, TITLE_PX_Y, COLOR_WHITE);
 
-    g_font^.outText(8, 5, 'CG', 5);
-    g_font^.outText(16, 5, 'A-S', 3);
-    g_font^.outText(28, 5, 'LAC', 15);
+    g_font^.outText(TITLE_TEXT1_X, TITLE_TEXT_Y, 'CG', COLOR_MAGENTA);
+    g_font^.outText(TITLE_TEXT2_X, TITLE_TEXT_Y, 'A-S', COLOR_CYAN);
+    g_font^.outText(TITLE_TEXT3_X, TITLE_TEXT_Y, 'LAC', COLOR_WHITE);
 
     { Base information }
-    tg_tile7(3, 18, SPRITE_FLOOR);
-    tg_tile7(3, 26, SPRITE_LEVEL);
-    tg_tile7(3, 34, SPRITE_HEALTH);
-    tg_tile7(3, 42, SPRITE_XP);
-    tg_tile7(3, 50, SPRITE_MONEY);
+    tg_tile7(STATUS_DEPTH_ICON_X, STATUS_DEPTH_ICON_Y, SPRITE_FLOOR);
+    tg_tile7(STATUS_LEVEL_ICON_X, STATUS_LEVEL_ICON_Y, SPRITE_LEVEL);
+    tg_tile7(STATUS_HEALTH_ICON_X, STATUS_HEALTH_ICON_Y, SPRITE_HEALTH);
+    tg_tile7(STATUS_XP_ICON_X, STATUS_XP_ICON_Y, SPRITE_XP);
+    tg_tile7(STATUS_MONEY_ICON_X, STATUS_MONEY_ICON_Y, SPRITE_MONEY);
 
     { Stat information }
-    tg_tile7(3, 66, SPRITE_SWORD1);
-    tg_tile7(3, 74, SPRITE_SHIELD3);
-    tg_tile7(24, 66, SPRITE_BOOTS1);
-    tg_tile7(24, 74, SPRITE_LUCK);
+    tg_tile7(STAT_ATK_ICON_X, STAT_ATK_ICON_Y, SPRITE_SWORD1);
+    tg_tile7(STAT_DEF_ICON_X, STAT_DEF_ICON_Y, SPRITE_SHIELD3);
+    tg_tile7(STAT_SPEED_ICON_X, STAT_SPEED_ICON_Y, SPRITE_BOOTS1);
+    tg_tile7(STAT_LUCK_ICON_X, STAT_LUCK_ICON_Y, SPRITE_LUCK);
 
     { The health and xp bars }
-    tg_rectangle(11, 35, 43, 39, 14);
-    tg_rectangle(11, 43, 43, 47, 14);
+    tg_rectangle(PLAYER_HP_BOX_X1, PLAYER_HP_BOX_Y1, PLAYER_HP_BOX_X2, PLAYER_HP_BOX_Y2, COLOR_YELLOW);
+    tg_rectangle(PLAYER_XP_BOX_X1, PLAYER_XP_BOX_Y1, PLAYER_XP_BOX_X2, PLAYER_XP_BOX_Y2, COLOR_YELLOW);
+
 end;
 
 { render_interface_values - draws the player-specific values to the main game interface
@@ -298,42 +400,42 @@ var
     next_level: Longint;
 begin
     { Floor }
-    g_font^.outTextRight(42, 19, '1', 15);
+    g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, '1', COLOR_WHITE);
     { Level }
     Str(p^.get_level, s);
-    g_font^.outTextRight(42, 27, s, 15);
+    g_font^.outTextRight(STATUS_LEVEL_TEXT_X, STATUS_LEVEL_TEXT_Y, s, COLOR_WHITE);
 
     { Health bar }
     {pct is a range from 0 to 100 - e.g 75 / 100HP = 7500 / 100 = 75}
     hp_pct := (p^.get_hp * 100) div (p^.get_max_hp);
     hp_w :=  (hp_pct * PLAYER_HP_W) div 100;
-    tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, 4);
+    tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, COLOR_RED);
 
     { XP bar }
     next_level := get_xp_for_next_level(p^.get_level);
     xp_pct := (p^.get_xp * 100) div next_level;
     xp_w := (xp_pct * PLAYER_XP_W) div 100;
-    tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, 2);
+    tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, COLOR_GREEN);
 
     { Money }
     Str(p^.get_money, s);
-    g_font^.outTextRight(42, 51, s, 15);
+    g_font^.outTextRight(STATUS_MONEY_TEXT_X, STATUS_MONEY_TEXT_Y, s, COLOR_WHITE);
 
     { Atk }
     Str(p^.get_atk, s);
-    g_font^.outTextRight(21, 67, s, 15);
+    g_font^.outTextRight(STAT_ATK_TEXT_X, STAT_ATK_TEXT_Y, s, COLOR_WHITE);
 
     { Def }
     Str(p^.get_def, s);
-    g_font^.outTextRight(21, 75, s, 15);
+    g_font^.outTextRight(STAT_DEF_TEXT_X, STAT_DEF_TEXT_Y, s, COLOR_WHITE);
 
     { Spd }
     Str(p^.get_spd, s);
-    g_font^.outTextRight(44, 67, s, 15);
+    g_font^.outTextRight(STAT_SPEED_TEXT_X, STAT_SPEED_TEXT_Y, s, COLOR_WHITE);
 
     { Luck }
     Str(p^.get_luck, s);
-    g_font^.outTextRight(44, 75, s, 15);
+    g_font^.outTextRight(STAT_LUCK_TEXT_X, STAT_LUCK_TEXT_Y, s, COLOR_WHITE);
 end;
 
 end.

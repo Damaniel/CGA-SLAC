@@ -45,14 +45,6 @@ end;
 begin
 
   Randomize;
-
-  for idx := 1 to 15 do
-  begin
-    generate_random_drop(22, gen);
-    dump_item(gen);
-  end;
-
-{
   game_init;
   g_player.Init;
   g_dungeon.Init;
@@ -70,5 +62,5 @@ begin
   end;
 
   game_cleanup;
-}
+
 end.
