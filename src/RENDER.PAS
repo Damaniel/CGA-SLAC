@@ -14,6 +14,7 @@ uses
     txtgraph,
     Globals,
     Player,
+    Item,
     Enemy,
     Dungeon;
 
@@ -261,8 +262,9 @@ var
     sq_type: Integer;
     dt_x, dt_y: Integer;
     sprite: Integer;
-    enemy: Integer;
+    enemy, item: Integer;
     s: SLACEnemy;
+    it: SLACItem;
 begin
     tile_y := DUNGEON_AREA_Y;
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
@@ -293,11 +295,21 @@ begin
                         SQUARE_DOWN_STAIRS: sprite := SPRITE_FLOOR;
                     end;
                     tg_tile7(tile_x, tile_y, sprite);
-                    { If an enemy is here, render it }
-                    s := g_enemy_list[d^.get_enemy(dt_x, dt_y)];
-                    enemy := s.enemy_idx;
-                    if enemy <> NO_ENEMY then
+                    { If an item is here, render it }
+                    if d^.get_item(dt_x, dt_y) <> NO_ITEM then
                     begin
+                        it := g_item_list[d^.get_item(dt_x, dt_y)];
+                        case it.item_class of
+                            SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[d^.get_item(dt_x, dt_y)].tid);
+                            SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[d^.get_item(dt_x, dt_y)].tid);
+                            SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[d^.get_item(dt_x, dt_y)].tid);
+                        end;
+                    end;
+                    { If an enemy is here, render it }
+                    if d^.get_enemy(dt_x, dt_y) <> NO_ENEMY then
+                    begin
+                        s := g_enemy_list[d^.get_enemy(dt_x, dt_y)];
+                        enemy := s.enemy_idx;
                         tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
                     end;
                 end;

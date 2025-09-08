@@ -10,6 +10,7 @@ interface
 
 uses
    Enemy,
+   Item,
    Globals,
    Generate;
 
@@ -582,8 +583,9 @@ begin
    create_from_gen_data(gen);
    add_stairs(gen);
    clear_enemy_list;
+   clear_item_list;
    generate_initial_enemies(20);
-   {generate_initial_items(10);}
+   generate_initial_items(10);
    player_x := up_stair_x;
    player_y := up_stair_y;
    light_area(player_x, player_y);
@@ -597,8 +599,8 @@ end;
 procedure SLACDungeon.initialize_square(x: Integer; y: Integer);
 begin
    squares[x][y].flags := $00;
-   squares[x][y].enemy_list_idx := NOTHING;
-   squares[x][y].item_list_idx := NOTHING;
+   squares[x][y].enemy_list_idx := NO_ENEMY;
+   squares[x][y].item_list_idx := NO_ITEM;
 end;
 
 procedure SLACDungeon.generate_initial_enemies(count: Integer);
@@ -649,7 +651,49 @@ begin
 end;
 
 procedure SLACDungeon.generate_initial_items(count: Integer);
+var
+   it: SLACItem;
+   idx: Integer;
+   item_x, item_y: Integer;
+   d: DungeonSquareType;
+   item_list_idx: Integer;
+   legal_location: Boolean;
 begin
+   { for each item:
+      - generate an item
+      - generate a legal location
+      - get the first available item list index
+      - if a spot is open, populate the item list with the item details
+      - Mark the spot in the dungeon as containing this item index
+   }
+   for idx := 0 to count do
+   begin
+      generate_random_drop(floor, it);
+      legal_location := False;
+      while legal_location = False do
+      begin
+         item_x := Random(DUNGEON_WIDTH);
+         item_y := Random(DUNGEON_HEIGHT);
+         if get_square_type(item_x, item_y) = SQUARE_FLOOR then
+         begin
+            d := squares[item_x][item_y];
+            if d.item_list_idx = NO_ITEM then
+            begin
+               legal_location := True;
+            end;
+         end;
+      end;
+      item_list_idx := get_first_available_item_list_slot;
+      if item_list_idx >= 0 then begin
+         if item_list_idx <> -1 then
+         begin
+            { Add the item to the item list }
+            add_new_to_item_list_at(item_list_idx, @it);
+            { Add the item index to the dungeon struct }
+            add_item(item_x, item_y, item_list_idx);
+         end;
+      end;
+   end;
 end;
 
 { add_enemy : Places an enemy reference in the square at the specified location

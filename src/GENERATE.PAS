@@ -5,6 +5,8 @@ unit Generate;
 interface
 
 uses
+    Item,
+    Enemy,
     Globals;
 
 const
@@ -31,23 +33,13 @@ const
 
     { The chance that any piece of equipment will get +1 to the total plus mod }
     PLUS_MOD_CHANCE = 15;
-type
-
-{ A generated drop.  It has a type (item, weapon, armor), the offset into the relevant drop table,
-  the quantity (only for money) and a plus mod (only for equipment) }
-GenDropType=record
-    item_type: Integer;
-    item_idx: Integer;
-    quantity: Integer;
-    plus_mod: Byte;
-end;
 
 procedure generate_random_enemy(floor: Integer; var enemy_idx: Integer);
-procedure generate_random_drop(floor: Integer; var gen_drop: GenDropType);
+procedure generate_random_drop(floor: Integer; var gen_drop: SLACItem);
 procedure generate_random_item(floor: Integer; var item_idx: Integer; var quant: Integer);
 procedure generate_random_weapon(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
 procedure generate_random_armor(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
-procedure dump_item(i: GenDropType);
+procedure dump_item(i: SLACItem);
 function get_drop_at_breakpoint(r_table: array of Integer; idx: Integer) : Integer;
 function gen_check(floor: Integer; min_floor: Integer) : Boolean;
 function get_plus_mod_val : Integer;
@@ -123,7 +115,7 @@ end;
     floor: the floor to use to determine a suitable drop type
     var gen_drop: details about the drop (type, any quantity, any +X value)
 }
-procedure generate_random_drop(floor: Integer; var gen_drop: GenDropType);
+procedure generate_random_drop(floor: Integer; var gen_drop: SLACItem);
 var
     item_type: Integer;
     item_idx: Integer;
@@ -132,25 +124,26 @@ var
 begin
     r := Random(100);
     { 15 % chance of a weapon, 35 % chance of an armor, 50% chance of an item }
-    if (r < 15) then item_type := GEN_WEAPON_TYPE;
-    if (r >= 15) and (r < 50) then item_type := GEN_ARMOR_TYPE;
-    if (r >= 50) then item_type := GEN_ITEM_TYPE;
+    if (r < 15) then item_type := SLAC_WEAPON_TYPE;
+    if (r >= 15) and (r < 50) then item_type := SLAC_ARMOR_TYPE;
+    if (r >= 50) then item_type := SLAC_ITEM_TYPE;
 
-    { Set the drop type }
-    gen_drop.item_type := item_type;
     { Create the drop + quantity or plus modifier }
     case item_type of
         GEN_WEAPON_TYPE: begin
                             generate_random_weapon(floor, item_idx, val);
+                            gen_drop.item_class := SLAC_WEAPON_TYPE;
                             gen_drop.plus_mod := val;
                         end;
         GEN_ARMOR_TYPE:  begin
                             generate_random_armor(floor, item_idx, val);
+                            gen_drop.item_class := SLAC_ARMOR_TYPE;
                             gen_drop.plus_mod := val;
                          end;
         GEN_ITEM_TYPE:   begin
                             generate_random_item(floor, item_idx, val);
-                            gen_drop.quantity := val;
+                            gen_drop.item_class := SLAC_ITEM_TYPE;
+                            gen_drop.amount := val;
                          end;
     end;
     { Set the index into the appropriate drop table }
@@ -203,7 +196,7 @@ begin
       (i.e. diamonds should generate more quant than copper given the same
        floor)
     }
-    if g_item_data[i].class = ITEM_MONEY then
+    if g_item_data[i].item_class = ITEM_MONEY then
     begin
         case g_item_data[i].tid of
             SPRITE_COPPER: mult := 1;
@@ -425,10 +418,10 @@ end;
   Parameters:
     i: the item to dump
 }
-procedure dump_item(i: GenDropType);
+procedure dump_item(i: SLACItem);
 begin
-    case i.item_type of
-        GEN_WEAPON_TYPE: begin
+    case i.item_class of
+        SLAC_WEAPON_TYPE: begin
                             Write(g_weapon_data[i.item_idx].name);
                             if i.plus_mod > 0 then
                             begin
@@ -440,7 +433,7 @@ begin
                                 Writeln('');
                             end;
                          end;
-        GEN_ARMOR_TYPE: begin
+        SLAC_ARMOR_TYPE: begin
                             Write(g_armor_data[i.item_idx].name);
                             if i.plus_mod > 0 then
                             begin
@@ -452,17 +445,17 @@ begin
                                 Writeln('');
                             end;
                         end;
-        GEN_ITEM_TYPE:  begin
-                            if g_item_data[i.item_idx].class = ITEM_MONEY then
+        SLAC_ITEM_TYPE:  begin
+                            if g_item_data[i.item_idx].item_class = ITEM_MONEY then
                             begin
-                                Write(i.quantity);
+                                Write(i.amount);
                                 Write(' ');
                             end;
-                            if g_item_data[i.item_idx].class = ITEM_SCROLL then
+                            if g_item_data[i.item_idx].item_class = ITEM_SCROLL then
                             begin
                                 Write('Scroll of ');
                             end;
-                            if g_item_data[i.item_idx].class = ITEM_POTION then
+                            if g_item_data[i.item_idx].item_class = ITEM_POTION then
                             begin
                                 Write('Potion of ');
                             end;

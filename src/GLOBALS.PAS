@@ -27,7 +27,7 @@ end;
 { Entries in the weapon data table }
 WeaponTableEntryType = record
     name: string[16];
-    class: Byte;
+    item_class: Byte;
     min_floor: Byte;
     rarity: Byte;
     atk: Integer;
@@ -38,7 +38,7 @@ end;
 { Entries in the armor data table }
 ArmorTableEntryType = record
     name: string[16];
-    class: Byte;
+    item_class: Byte;
     min_floor: Byte;
     rarity: Byte;
     def: Byte;
@@ -51,7 +51,7 @@ end;
 { Entries in the item data table }
 ItemTableEntryType = record
     name: string [16];
-    class: Byte;
+    item_class: Byte;
     min_floor: Byte;
     rarity: Byte;
     effect_id: Byte;
@@ -275,29 +275,29 @@ const
     NUM_WEAPONS = 12;
     g_weapon_data: array[0..NUM_WEAPONS-1] of WeaponTableEntryType =
         (
-          (name: 'Wood Dagger';     class: WEAPON_DAGGER; min_floor: 1;  rarity: 255;
+          (name: 'Wood Dagger';     item_class: WEAPON_DAGGER; min_floor: 1;  rarity: 255;
            atk: 2;  spd: 2;  tid: SPRITE_DAGGER1),
-          (name: 'Steel Dagger';    class: WEAPON_DAGGER; min_floor: 10; rarity: 120;
+          (name: 'Steel Dagger';    item_class: WEAPON_DAGGER; min_floor: 10; rarity: 120;
            atk: 10; spd: 10; tid: SPRITE_DAGGER2),
-          (name: 'Magic Dagger';    class: WEAPON_DAGGER; min_floor: 20; rarity: 40;
+          (name: 'Magic Dagger';    item_class: WEAPON_DAGGER; min_floor: 20; rarity: 40;
            atk: 20; spd: 20; tid: SPRITE_DAGGER2),
-          (name: 'Wood Sword';      class: WEAPON_SWORD;  min_floor: 1;  rarity: 240;
+          (name: 'Wood Sword';      item_class: WEAPON_SWORD;  min_floor: 1;  rarity: 240;
            atk: 4;  spd: 0;  tid: SPRITE_SWORD1),
-          (name: 'Steel Sword';     class: WEAPON_SWORD;  min_floor: 10; rarity: 110;
+          (name: 'Steel Sword';     item_class: WEAPON_SWORD;  min_floor: 10; rarity: 110;
            atk: 15; spd: 0;  tid: SPRITE_SWORD2),
-          (name: 'Magic Sword';     class: WEAPON_SWORD;  min_floor: 20; rarity: 35;
+          (name: 'Magic Sword';     item_class: WEAPON_SWORD;  min_floor: 20; rarity: 35;
            atk: 30; spd: 0;  tid: SPRITE_SWORD2),
-          (name: 'Wood Longsword';  class: WEAPON_LSWORD; min_floor: 2;  rarity: 225;
+          (name: 'Wood Longsword';  item_class: WEAPON_LSWORD; min_floor: 2;  rarity: 225;
            atk: 7;  spd: -1; tid: SPRITE_LSWORD1),
-          (name: 'Steel Longsword'; class: WEAPON_LSWORD; min_floor: 12; rarity: 100;
+          (name: 'Steel Longsword'; item_class: WEAPON_LSWORD; min_floor: 12; rarity: 100;
            atk: 20; spd: -2; tid: SPRITE_LSWORD2),
-          (name: 'Magic Longsword'; class: WEAPON_LSWORD; min_floor: 22; rarity: 30;
+          (name: 'Magic Longsword'; item_class: WEAPON_LSWORD; min_floor: 22; rarity: 30;
            atk: 45; spd: -3; tid: SPRITE_LSWORD2),
-          (name: 'Wood Axe';        class: WEAPON_AXE;    min_floor: 3;  rarity: 215;
+          (name: 'Wood Axe';        item_class: WEAPON_AXE;    min_floor: 3;  rarity: 215;
            atk: 10; spd: -2; tid: SPRITE_AXE1),
-          (name: 'Steel Axe';       class: WEAPON_AXE;    min_floor: 13; rarity: 95;
+          (name: 'Steel Axe';       item_class: WEAPON_AXE;    min_floor: 13; rarity: 95;
            atk: 25; spd: -5; tid: SPRITE_AXE2),
-          (name: 'Magic Axe';       class: WEAPON_AXE;    min_floor: 23; rarity: 25;
+          (name: 'Magic Axe';       item_class: WEAPON_AXE;    min_floor: 23; rarity: 25;
            atk: 55; spd: -8; tid: SPRITE_AXE2)
         );
     g_weapon_rarity_breakpoints: array[0..NUM_WEAPONS-1] of Integer =
@@ -307,45 +307,45 @@ const
     NUM_ARMORS = 20;
     g_armor_data: array[0..NUM_ARMORS-1] of ArmorTableEntryType =
         (
-          (name: 'Wood Shield';         class: ARMOR_SHIELD; min_floor: 1;  rarity: 255; def: 1;
+          (name: 'Wood Shield';         item_class: ARMOR_SHIELD; min_floor: 1;  rarity: 255; def: 1;
            spd: 5;   atk: 0;  luck: 0;  tid: SPRITE_SHIELD1),
-          (name: 'Leather Shield';      class: ARMOR_SHIELD; min_floor: 5;  rarity: 180; def: 4;
+          (name: 'Leather Shield';      item_class: ARMOR_SHIELD; min_floor: 5;  rarity: 180; def: 4;
            spd: 0;   atk: 0;  luck: 0;  tid: SPRITE_SHIELD2),
-          (name: 'Steel Shield';        class: ARMOR_SHIELD; min_floor: 10; rarity: 120; def: 8;
+          (name: 'Steel Shield';        item_class: ARMOR_SHIELD; min_floor: 10; rarity: 120; def: 8;
            spd: -2;  atk: 0;  luck: 0;  tid: SPRITE_SHIELD3),
-          (name: 'Magic Shield';        class: ARMOR_SHIELD; min_floor: 20; rarity: 40;  def: 15;
+          (name: 'Magic Shield';        item_class: ARMOR_SHIELD; min_floor: 20; rarity: 40;  def: 15;
            spd: -5;  atk: 0;  luck: 0;  tid: SPRITE_SHIELD4),
-          (name: 'Cloth Armor';         class: ARMOR_CHEST;  min_floor: 1;  rarity: 255; def: 1;
+          (name: 'Cloth Armor';         item_class: ARMOR_CHEST;  min_floor: 1;  rarity: 255; def: 1;
            spd: 5;   atk: 0;  luck: 0;  tid: SPRITE_ARMOR1),
-          (name: 'Leather Armor';       class: ARMOR_CHEST;  min_floor: 5;  rarity: 180; def: 4;
+          (name: 'Leather Armor';       item_class: ARMOR_CHEST;  min_floor: 5;  rarity: 180; def: 4;
            spd: 0;   atk: 0;  luck: 0;  tid: SPRITE_ARMOR2),
-          (name: 'Chain Armor';         class: ARMOR_CHEST;  min_floor: 10; rarity: 120; def: 8;
+          (name: 'Chain Armor';         item_class: ARMOR_CHEST;  min_floor: 10; rarity: 120; def: 8;
            spd: -5;  atk: 0;  luck: 0;  tid: SPRITE_ARMOR3),
-          (name: 'Plate Armor';         class: ARMOR_CHEST;  min_floor: 20; rarity: 40;  def: 15;
+          (name: 'Plate Armor';         item_class: ARMOR_CHEST;  min_floor: 20; rarity: 40;  def: 15;
            spd: -10; atk: 0;  luck: 0;  tid: SPRITE_ARMOR4),
-          (name: 'Cloth Boots';         class: ARMOR_BOOTS;  min_floor: 1;  rarity: 255; def: 1;
+          (name: 'Cloth Boots';         item_class: ARMOR_BOOTS;  min_floor: 1;  rarity: 255; def: 1;
            spd: 5;   atk: 0;  luck: 0;  tid: SPRITE_BOOTS1),
-          (name: 'Leather Boots';       class: ARMOR_BOOTS;  min_floor: 5;  rarity: 180; def: 4;
+          (name: 'Leather Boots';       item_class: ARMOR_BOOTS;  min_floor: 5;  rarity: 180; def: 4;
            spd: 0;   atk: 0;  luck: 0;  tid: SPRITE_BOOTS2),
-          (name: 'Chain Boots';         class: ARMOR_BOOTS;  min_floor: 10; rarity: 120; def: 8;
+          (name: 'Chain Boots';         item_class: ARMOR_BOOTS;  min_floor: 10; rarity: 120; def: 8;
            spd: -2;  atk: 0;  luck: 0;  tid: SPRITE_BOOTS3),
-          (name: 'Plate Boots';         class: ARMOR_BOOTS;  min_floor: 20; rarity: 40;  def: 15;
+          (name: 'Plate Boots';         item_class: ARMOR_BOOTS;  min_floor: 20; rarity: 40;  def: 15;
            spd: -5;  atk: 0;  luck: 0;  tid: SPRITE_BOOTS4),
-          (name: 'Cloth Hat';           class: ARMOR_HELM;   min_floor: 1;  rarity: 255; def: 1;
+          (name: 'Cloth Hat';           item_class: ARMOR_HELM;   min_floor: 1;  rarity: 255; def: 1;
            spd: 5;   atk: 0;  luck: 0;  tid: SPRITE_HAT1),
-          (name: 'Leather Hat';         class: ARMOR_HELM;   min_floor: 5;  rarity: 180; def: 4;
+          (name: 'Leather Hat';         item_class: ARMOR_HELM;   min_floor: 5;  rarity: 180; def: 4;
            spd: 0;   atk: 0;  luck: 0;  tid: SPRITE_HAT2),
-          (name: 'Chain Helm';          class: ARMOR_HELM;   min_floor: 10; rarity: 120; def: 8;
+          (name: 'Chain Helm';          item_class: ARMOR_HELM;   min_floor: 10; rarity: 120; def: 8;
            spd: -2;  atk: 0;  luck: 0;  tid: SPRITE_HAT3),
-          (name: 'Plate Helm';          class: ARMOR_HELM;   min_floor: 20; rarity: 40;  def: 15;
+          (name: 'Plate Helm';          item_class: ARMOR_HELM;   min_floor: 20; rarity: 40;  def: 15;
            spd: -5;  atk: 0;  luck: 0;  tid: SPRITE_HAT4),
-          (name: 'Ring of Attack';      class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
+          (name: 'Ring of Attack';      item_class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
            spd: 0;   atk: 25; luck: 0;  tid: SPRITE_RING1),
-          (name: 'Ring of Speed';       class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
+          (name: 'Ring of Speed';       item_class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
            spd: 25;  atk: 0;  luck: 0;  tid: SPRITE_RING2),
-          (name: 'Ring of Defense';     class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 25;
+          (name: 'Ring of Defense';     item_class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 25;
            spd: 0;   atk: 0;  luck: 0;  tid: SPRITE_RING3),
-          (name: 'Ring of Luck';        class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
+          (name: 'Ring of Luck';        item_class: ARMOR_RING;   min_floor: 10; rarity: 32;  def: 0;
            spd: 0;   atk: 0;  luck: 25; tid: SPRITE_RING4)
         );
     g_armor_rarity_breakpoints: array[0..NUM_ARMORS-1] of Integer =
@@ -356,24 +356,24 @@ const
     NUM_ITEMS = 18;
     g_item_data: array[0..NUM_ITEMS-1] of ItemTableEntryType =
     (
-      (name: 'Heal 1';       class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
-      (name: 'Heal 2';       class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
-      (name: 'Speed';        class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 2;  tid: SPRITE_POTION3),
-      (name: 'Attack';       class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 3;  tid: SPRITE_POTION4),
-      (name: 'Luck';         class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 4;  tid: SPRITE_POTION5),
-      (name: 'Harm';         class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 5;  tid: SPRITE_POTION6),
-      (name: 'Identify';     class: ITEM_SCROLL;  min_floor: 5;   rarity: 128; effect_id: 6;  tid: SPRITE_SCROLL1),
-      (name: 'Phase';        class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 7;  tid: SPRITE_SCROLL2),
-      (name: 'Up';           class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 8;  tid: SPRITE_SCROLL3),
-      (name: 'Armor';        class: ITEM_SCROLL;  min_floor: 10;  rarity: 16;  effect_id: 9;  tid: SPRITE_SCROLL4),
-      (name: 'Confuse';      class: ITEM_SCROLL;  min_floor: 1;   rarity: 64;  effect_id: 10; tid: SPRITE_SCROLL5),
-      (name: 'Summon';       class: ITEM_SCROLL;  min_floor: 10;  rarity: 32;  effect_id: 11; tid: SPRITE_SCROLL6),
-      (name: 'Copper';       class: ITEM_MONEY;   min_floor: 1;   rarity: 255; effect_id: 12; tid: SPRITE_COPPER),
-      (name: 'Silver';       class: ITEM_MONEY;   min_floor: 3;   rarity: 224; effect_id: 13; tid: SPRITE_SILVER),
-      (name: 'Gold';         class: ITEM_MONEY;   min_floor: 5;   rarity: 176; effect_id: 14; tid: SPRITE_GOLD),
-      (name: 'Ruby';         class: ITEM_MONEY;   min_floor: 8;   rarity: 128; effect_id: 15; tid: SPRITE_RUBY),
-      (name: 'Emerald';      class: ITEM_MONEY;   min_floor: 12;  rarity: 96;  effect_id: 16; tid: SPRITE_EMERALD),
-      (name: 'Diamond';      class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND)
+      (name: 'Heal 1';   item_class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
+      (name: 'Heal 2';   item_class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
+      (name: 'Speed';    item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 2;  tid: SPRITE_POTION3),
+      (name: 'Attack';   item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 3;  tid: SPRITE_POTION4),
+      (name: 'Luck';     item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 4;  tid: SPRITE_POTION5),
+      (name: 'Harm';     item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 5;  tid: SPRITE_POTION6),
+      (name: 'Identify'; item_class: ITEM_SCROLL;  min_floor: 5;   rarity: 128; effect_id: 6;  tid: SPRITE_SCROLL1),
+      (name: 'Phase';    item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 7;  tid: SPRITE_SCROLL2),
+      (name: 'Up';       item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 8;  tid: SPRITE_SCROLL3),
+      (name: 'Armor';    item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 16;  effect_id: 9;  tid: SPRITE_SCROLL4),
+      (name: 'Confuse';  item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 64;  effect_id: 10; tid: SPRITE_SCROLL5),
+      (name: 'Summon';   item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 32;  effect_id: 11; tid: SPRITE_SCROLL6),
+      (name: 'Copper';   item_class: ITEM_MONEY;   min_floor: 1;   rarity: 255; effect_id: 12; tid: SPRITE_COPPER),
+      (name: 'Silver';   item_class: ITEM_MONEY;   min_floor: 3;   rarity: 224; effect_id: 13; tid: SPRITE_SILVER),
+      (name: 'Gold';     item_class: ITEM_MONEY;   min_floor: 5;   rarity: 176; effect_id: 14; tid: SPRITE_GOLD),
+      (name: 'Ruby';     item_class: ITEM_MONEY;   min_floor: 8;   rarity: 128; effect_id: 15; tid: SPRITE_RUBY),
+      (name: 'Emerald';  item_class: ITEM_MONEY;   min_floor: 12;  rarity: 96;  effect_id: 16; tid: SPRITE_EMERALD),
+      (name: 'Diamond';  item_class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND)
     );
 
     g_item_rarity_breakpoints: array[0..NUM_ITEMS-1] of Integer =

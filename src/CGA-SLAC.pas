@@ -26,7 +26,6 @@ const
 var
   g_TimerInterval: Word;
   idx: Integer;
-  gen: GenDropType;
 
 procedure game_init;
 begin
