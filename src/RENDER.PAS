@@ -13,6 +13,7 @@ uses
     timer,
     txtgraph,
     Globals,
+    Generate,
     Player,
     Item,
     Enemy,
@@ -300,9 +301,9 @@ begin
                     begin
                         it := g_item_list[d^.get_item(dt_x, dt_y)];
                         case it.item_class of
-                            SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[d^.get_item(dt_x, dt_y)].tid);
-                            SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[d^.get_item(dt_x, dt_y)].tid);
-                            SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[d^.get_item(dt_x, dt_y)].tid);
+                            SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[it.item_idx].tid);
+                            SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[it.item_idx].tid);
+                            SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[it.item_idx].tid);
                         end;
                     end;
                     { If an enemy is here, render it }

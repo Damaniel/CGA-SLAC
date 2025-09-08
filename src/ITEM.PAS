@@ -56,6 +56,7 @@ procedure delete_item_list_item_at(slot: Integer);
 procedure clear_item_list;
 
 procedure get_item_at_slot(slot: Integer; var it: PSLACItem);
+
 implementation
 
 function get_sprite_index(i: PSLACItem) : Integer;
