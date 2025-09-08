@@ -42,7 +42,8 @@ begin
             keyRead := readkey;
         end;
 
-        g_dungeon.get_player_pos(x, y);
+        x := g_dungeon.player_x;
+        y := g_dungeon.player_y;
         moved := False;
 
         { Moving up }

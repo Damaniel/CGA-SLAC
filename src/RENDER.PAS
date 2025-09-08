@@ -227,8 +227,7 @@ begin
 
     if g_render_components.render_dungeon = True then
     begin
-        g_dungeon.get_player_pos(x, y);
-        render_dungeon_area(x - 8, y - 6);
+        render_dungeon_area(g_dungeon.player_x - 8, g_dungeon.player_y - 6);
         g_render_components.render_dungeon := False;
     end;
 end;
@@ -404,43 +403,43 @@ var
     next_level: Longint;
 begin
     { Floor }
-    Str(g_dungeon.get_current_floor, s);
+    Str(g_dungeon.floor, s);
     g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, s, COLOR_WHITE);
 
     { Level }
-    Str(g_player.get_level, s);
+    Str(g_player.level, s);
     g_font^.outTextRight(STATUS_LEVEL_TEXT_X, STATUS_LEVEL_TEXT_Y, s, COLOR_WHITE);
 
     { Health bar }
     {pct is a range from 0 to 100 - e.g 75 / 100HP = 7500 / 100 = 75}
-    hp_pct := (g_player.get_hp * 100) div (g_player.get_max_hp);
+    hp_pct := (g_player.hp * 100) div (g_player.max_hp);
     hp_w :=  (hp_pct * PLAYER_HP_W) div 100;
     tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, COLOR_RED);
 
     { XP bar }
-    next_level := get_xp_for_next_level(g_player.get_level);
-    xp_pct := (g_player.get_xp * 100) div next_level;
+    next_level := get_xp_for_next_level(g_player.level);
+    xp_pct := (g_player.xp * 100) div next_level;
     xp_w := (xp_pct * PLAYER_XP_W) div 100;
     tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, COLOR_GREEN);
 
     { Money }
-    Str(g_player.get_money, s);
+    Str(g_player.money, s);
     g_font^.outTextRight(STATUS_MONEY_TEXT_X, STATUS_MONEY_TEXT_Y, s, COLOR_WHITE);
 
     { Atk }
-    Str(g_player.get_atk, s);
+    Str(g_player.atk, s);
     g_font^.outTextRight(STAT_ATK_TEXT_X, STAT_ATK_TEXT_Y, s, COLOR_WHITE);
 
     { Def }
-    Str(g_player.get_def, s);
+    Str(g_player.def, s);
     g_font^.outTextRight(STAT_DEF_TEXT_X, STAT_DEF_TEXT_Y, s, COLOR_WHITE);
 
     { Spd }
-    Str(g_player.get_spd, s);
+    Str(g_player.spd, s);
     g_font^.outTextRight(STAT_SPEED_TEXT_X, STAT_SPEED_TEXT_Y, s, COLOR_WHITE);
 
     { Luck }
-    Str(g_player.get_luck, s);
+    Str(g_player.luck, s);
     g_font^.outTextRight(STAT_LUCK_TEXT_X, STAT_LUCK_TEXT_Y, s, COLOR_WHITE);
 end;
 

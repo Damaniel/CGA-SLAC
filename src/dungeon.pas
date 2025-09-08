@@ -81,24 +81,20 @@ end;
 
 { DungeonGenerator - the class that actually generates the dungeon structure }
 DungeonGenerator=object
+   dungeon_regions: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonRegionType;
+   up_stair_region: Byte;
+   down_stair_region: Byte;
    procedure Init;
    procedure generate;
    procedure get_region(region_idx: Integer; var region: DungeonRegionType);
    procedure region_to_xy(region: Integer; var x: Integer; var y: Integer);
    function xy_to_region(x: Integer; y: Integer) : Integer;
-   function get_up_stair_region: Integer;
-   function get_down_stair_region: Integer;
-
-   private
-      dungeon_regions: array[0..DUNGEON_GEN_NUM_COLS-1, 0..DUNGEON_GEN_NUM_ROWS-1] of DungeonRegionType;
-      up_stair_region: Byte;
-      down_stair_region: Byte;
-      procedure create_room(region_idx: Integer);
-      procedure connect_rooms(from_region: Integer; to_region: Integer);
-      procedure get_neighbors(region: Integer; var neighbors: NeighborType);
-      procedure dump_connections;
-      function get_random_unconnected_neighbor(region: Integer) : Integer;
-      function get_random_connected_neighbor(region: Integer) : Integer;
+   procedure create_room(region_idx: Integer);
+   procedure connect_rooms(from_region: Integer; to_region: Integer);
+   procedure get_neighbors(region: Integer; var neighbors: NeighborType);
+   procedure dump_connections;
+   function get_random_unconnected_neighbor(region: Integer) : Integer;
+   function get_random_connected_neighbor(region: Integer) : Integer;
 end;
 
 PDungeonGenerator=^DungeonGenerator;
@@ -113,6 +109,12 @@ end;
 
 { SLACDungeon - the complete carved dungeon }
 SLACDungeon=object
+   floor: Byte;
+   up_stair_x, up_stair_y: Byte;
+   down_stair_x, down_stair_y: Byte;
+   player_x, player_y: Byte;
+   squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
+
    procedure Init;
    procedure generate(gen: PDungeonGenerator; cur_floor: Byte);
    procedure initialize_square(x: Integer; y: Integer);
@@ -132,25 +134,14 @@ SLACDungeon=object
    function get_square_in_room(x: Integer; y: Integer) : Boolean;
    function get_enemy(x: Integer; y: Integer) : Shortint;
    function get_item(x: Integer; y: Integer) : Shortint;
-   function get_current_floor : Byte;
    procedure create_from_gen_data(gen: PDungeonGenerator);
-   procedure get_up_stair_pos(var x: Byte; var y: Byte);
-   procedure get_down_stair_pos(var x: Byte; var y: Byte);
-   procedure get_player_pos(var x: Byte; var y: Byte);
    procedure dump;
-
-   private
-      floor: Byte;
-      up_stair_x, up_stair_y: Byte;
-      down_stair_x, down_stair_y: Byte;
-      player_x, player_y: Byte;
-      squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
-      procedure add_stairs(gen: PDungeonGenerator);
-      procedure generate_unique_connection_list(gen: PDungeonGenerator; var clist: ConnectionListType);
-      procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
-                                    var room_x: Integer; var room_y: Integer);
-      procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
-      procedure carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
+   procedure add_stairs(gen: PDungeonGenerator);
+   procedure generate_unique_connection_list(gen: PDungeonGenerator; var clist: ConnectionListType);
+   procedure get_random_room_pos(x1: Integer; y1: Integer; x2: Integer; y2: Integer;
+                                 var room_x: Integer; var room_y: Integer);
+   procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
+   procedure carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
 end;
 
 var
@@ -505,18 +496,6 @@ begin
    end;
 end;
 
-{ get_up_stair_region - returns the marked up stair region }
-function DungeonGenerator.get_up_stair_region: Integer;
-begin
-   get_up_stair_region := up_stair_region;
-end;
-
-{ get_down_stair_region - returns the marked down stair region }
-function DungeonGenerator.get_down_stair_region: Integer;
-begin
-   get_down_stair_region := down_stair_region;
-end;
-
 { dump_connections - lists all connections between regions to the console.
 
   Note that these are not *unique* connections - each connected room has
@@ -779,18 +758,6 @@ procedure SLACDungeon.set_player_pos(x: Byte; y: Byte);
 begin
    player_x := x;
    player_y := y;
-end;
-
-{ get_current_floor: getter for floor }
-function SLACDungeon.get_current_floor : Byte;
-begin
-   get_current_floor := floor;
-end;
-
-procedure SLACDungeon.get_player_pos(var x: Byte; var y: Byte);
-begin
-   x := player_x;
-   y := player_y;
 end;
 
 { get_square_type : gets the square type of the square at the specified location
@@ -1157,7 +1124,7 @@ var
    up_stair_region, down_stair_region: Integer;
 begin
    { Get a random room position from the up stairs region}
-   up_stair_region := gen^.get_up_stair_region;
+   up_stair_region := gen^.up_stair_region;
    gen^.get_region(up_stair_region, dgt);
    gen^.region_to_xy(up_stair_region, region_x, region_y);
    room_top := region_y * REGION_HEIGHT + dgt.room_y;
@@ -1170,7 +1137,7 @@ begin
    up_stair_y := stair_y;
 
    { Get a random room position from the down stairs region }
-   down_stair_region := gen^.get_down_stair_region;
+   down_stair_region := gen^.down_stair_region;
    gen^.get_region(down_stair_region, dgt);
    gen^.region_to_xy(down_stair_region, region_x, region_y);
    room_top := region_y * REGION_HEIGHT + dgt.room_y;
@@ -1195,28 +1162,6 @@ procedure SLACDungeon.get_random_room_pos(x1: Integer; y1: Integer; x2: Integer;
 begin
    room_x := Random(x2 - x1) + x1;
    room_y := Random(y2 - y1) + y1;
-end;
-
-{get_up_stair_pos - getter function for the position of the up stairs
-
-  Parameters:
-    - x, y : the location of the stairs, returned to the caller
-}
-procedure SLACDungeon.get_up_stair_pos(var x: Byte; var y: Byte);
-begin
-   x := up_stair_x;
-   y := up_stair_y;
-end;
-
-{get_down_stair_pos - getter function for the position of the down stairs
-
-  Parameters:
-    - x, y : the location of the stairs, returned to the caller
-}
-procedure SLACDungeon.get_down_stair_pos(var x: Byte; var y: Byte);
-begin
-   x := down_stair_x;
-   y := down_stair_y;
 end;
 
 { light_area - lights the area around the player, and the room if standing in one

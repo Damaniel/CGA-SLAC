@@ -16,27 +16,6 @@ const
 type
 
 SLACPlayer=object
-    procedure Init;
-    function get_level : Byte;
-    function get_hp : Integer;
-    function get_max_hp: Integer;
-    function get_xp: Longint;
-    function get_money : Longint;
-    function get_atk : Integer;
-    function get_def : Integer;
-    function get_spd: Integer;
-    function get_luck : Integer;
-    procedure set_level(val : Byte);
-    procedure set_max_hp(val: Integer);
-    procedure set_hp(val: Integer);
-    procedure set_xp(val: Longint);
-    procedure set_money(val: Longint);
-    procedure set_atk(val: Integer);
-    procedure set_def(val: Integer);
-    procedure set_spd(val: Integer);
-    procedure set_luck(val: Integer);
-
-private
     level: Byte;
     hp: Integer;
     max_hp: Integer;
@@ -46,6 +25,7 @@ private
     def: Integer;
     spd: Integer;
     luck: Integer;
+    procedure Init;
 end;
 
 PSLACPlayer=^SLACPlayer;
@@ -74,96 +54,6 @@ begin
     def := get_base_defense(level);
     spd := get_base_speed(level);
     luck := get_base_luck(level);
-end;
-
-function SLACPlayer.get_level : Byte;
-begin
-    get_level := level;
-end;
-
-function SLACPlayer.get_hp : Integer;
-begin
-    get_hp := hp;
-end;
-
-function SLACPlayer.get_max_hp: Integer;
-begin
-    get_max_hp := max_hp
-end;
-
-function SLACPlayer.get_xp : Longint;
-begin
-    get_xp := xp;
-end;
-
-function SLACPlayer.get_money : Longint;
-begin
-    get_money := money;
-end;
-
-function SLACPlayer.get_atk : Integer;
-begin
-    get_atk := atk;
-end;
-
-function SLACPlayer.get_def : Integer;
-begin
-    get_def := def;
-end;
-
-function SLACPlayer.get_spd : Integer;
-begin
-    get_spd := spd;
-end;
-
-function SLACPlayer.get_luck : Integer;
-begin
-    get_luck := luck;
-end;
-
-procedure SLACPlayer.set_level(val : Byte);
-begin
-    level := val;
-end;
-
-procedure SLACPlayer.set_hp(val : Integer);
-begin
-    hp := val;
-end;
-
-procedure SLACPlayer.set_max_hp(val : Integer);
-begin
-    max_hp := val;
-end;
-
-procedure SLACPlayer.set_xp(val : Longint);
-begin
-    xp := val;
-end;
-
-procedure SLACPlayer.set_money(val : Longint);
-begin
-    money := val;
-end;
-
-procedure SLACPlayer.set_atk(val : Integer);
-begin
-    atk := val;
-end;
-
-procedure SLACPlayer.set_def(val : Integer);
-begin
-    def := val;
-end;
-
-procedure SLACPlayer.set_spd(val : Integer);
-begin
-    spd := val;
-end;
-
-procedure SLACPlayer.set_luck(val : Integer);
-begin
-    luck := val;
 end;
 
 { get_base_hp - returns the base HP value for the specified player level.
