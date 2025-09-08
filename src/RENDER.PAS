@@ -157,15 +157,15 @@ var
   { Render components }
   g_render_components: RenderComponentsType;
 
-procedure adjust_all_render_components(var components: RenderComponentsType; comp_val: Integer);
+procedure adjust_all_render_components(comp_val: Integer);
 procedure render_init;
 procedure render_cleanup;
-procedure render_components(var components: RenderComponentsType);
-procedure render_dungeon_area(left: Integer; top: Integer; d: PSLACDungeon);
+procedure render_components;
+procedure render_dungeon_area(left: Integer; top: Integer);
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 procedure render_text_box;
 procedure render_interface;
-procedure render_interface_values(p : PSLACPlayer);
+procedure render_interface_values;
 
 implementation
 
@@ -173,20 +173,19 @@ implementation
   (or not be) redrawn.
 
   Parameters:
-    - var components: the list of render components to be updated
     - comp_val: should they be enabled (SET_ALL) or disabled (CLEAR_ALL)?
 }
-procedure adjust_all_render_components(var components: RenderComponentsType; comp_val: Integer);
+procedure adjust_all_render_components(comp_val: Integer);
 var
     set_val: Boolean;
 begin
     if comp_val = CLEAR_ALL then set_val := False;
     if comp_val = SET_ALL then set_val := True;
 
-    components.render_interface := set_val;
-    components.render_dungeon := set_val;
-    components.render_interface_values := set_val;
-    components.render_text_box := set_val;
+    g_render_components.render_interface := set_val;
+    g_render_components.render_dungeon := set_val;
+    g_render_components.render_interface_values := set_val;
+    g_render_components.render_text_box := set_val;
 end;
 
 { render_init - sets up the graphics system }
@@ -199,7 +198,7 @@ begin
   tg_init;
   tg_clear(0);
 
-  adjust_all_render_components(g_render_components, CLEAR_ALL);
+  adjust_all_render_components(CLEAR_ALL);
 end;
 
 { render_cleanup - shuts down the graphics system }
@@ -209,38 +208,28 @@ begin
   tg_term;
 end;
 
-{ render_components - the main render function
-
-  Parameters:
-    - components: a list of components to render (or not render)
-
-  components contains a series of flags that control whether some aspect of the game (i.e. the dungeon,
-  the text log, etc) should be rendered.  Generally, some action will set the rendering of one or more
-  components to True; when the render loop occurs, the components to render are redrawn, and the flag
-  representing that component is set to False so the component won't redraw until requested in the
-  future.
-}
-procedure render_components(var components: RenderComponentsType);
+{ render_components - the main render function }
+procedure render_components;
 var
     x, y: Byte;
 begin
-    if components.render_interface = True then
+    if g_render_components.render_interface = True then
     begin
         render_interface;
-        components.render_interface := False;
+        g_render_components.render_interface := False;
     end;
 
-    if components.render_interface_values = True then
+    if g_render_components.render_interface_values = True then
     begin
-        render_interface_values(@g_player);
-        components.render_interface_values := False;
+        render_interface_values;
+        g_render_components.render_interface_values := False;
     end;
 
-    if components.render_dungeon = True then
+    if g_render_components.render_dungeon = True then
     begin
         g_dungeon.get_player_pos(x, y);
-        render_dungeon_area(x - 8, y - 6, @g_dungeon);
-        components.render_dungeon := False;
+        render_dungeon_area(x - 8, y - 6);
+        g_render_components.render_dungeon := False;
     end;
 end;
 
@@ -256,7 +245,7 @@ end;
   extend beyond the width/height of the dungeon.  In both the <0 and >(width or height) case,
   we'll render fog of war by default.
 }
-procedure render_dungeon_area(left: Integer; top: Integer; d: PSLACDungeon);
+procedure render_dungeon_area(left: Integer; top: Integer);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
@@ -283,23 +272,25 @@ begin
             end
             else begin
                 { Draw fog of war if square isn't seen yet }
-                if d^.get_square_seen(dt_x, dt_y) = False then
+                if g_dungeon.get_square_seen(dt_x, dt_y) = False then
                 begin
                     render_fog_of_war(x, y, tile_x, tile_y);
                 end
                 else begin
-                    sq_type := d^.get_square_type(dt_x, dt_y);
+                    { Otherwise determine which dungeon square goes here and draw it }
+                    sq_type := g_dungeon.get_square_type(dt_x, dt_y);
                     case sq_type of
                         SQUARE_WALL: sprite := SPRITE_WALL1;
                         SQUARE_FLOOR: sprite := SPRITE_BLANK;
-                        SQUARE_UP_STAIRS: sprite := SPRITE_FLOOR;
-                        SQUARE_DOWN_STAIRS: sprite := SPRITE_FLOOR;
+                        SQUARE_UP_STAIRS: sprite := SPRITE_USTAIR;
+                        SQUARE_DOWN_STAIRS: sprite := SPRITE_DSTAIR;
                     end;
                     tg_tile7(tile_x, tile_y, sprite);
                     { If an item is here, render it }
-                    if d^.get_item(dt_x, dt_y) <> NO_ITEM then
+                    if g_dungeon.get_item(dt_x, dt_y) <> NO_ITEM then
                     begin
-                        it := g_item_list[d^.get_item(dt_x, dt_y)];
+                        { Determine what item it is and draw the appropriate one }
+                        it := g_item_list[g_dungeon.get_item(dt_x, dt_y)];
                         case it.item_class of
                             SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[it.item_idx].tid);
                             SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[it.item_idx].tid);
@@ -307,9 +298,9 @@ begin
                         end;
                     end;
                     { If an enemy is here, render it }
-                    if d^.get_enemy(dt_x, dt_y) <> NO_ENEMY then
+                    if g_dungeon.get_enemy(dt_x, dt_y) <> NO_ENEMY then
                     begin
-                        s := g_enemy_list[d^.get_enemy(dt_x, dt_y)];
+                        s := g_enemy_list[g_dungeon.get_enemy(dt_x, dt_y)];
                         enemy := s.enemy_idx;
                         tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
                     end;
@@ -382,7 +373,7 @@ begin
     g_font^.outText(TITLE_TEXT3_X, TITLE_TEXT_Y, 'LAC', COLOR_WHITE);
 
     { Base information }
-    tg_tile7(STATUS_DEPTH_ICON_X, STATUS_DEPTH_ICON_Y, SPRITE_FLOOR);
+    tg_tile7(STATUS_DEPTH_ICON_X, STATUS_DEPTH_ICON_Y, SPRITE_DSTAIR);
     tg_tile7(STATUS_LEVEL_ICON_X, STATUS_LEVEL_ICON_Y, SPRITE_LEVEL);
     tg_tile7(STATUS_HEALTH_ICON_X, STATUS_HEALTH_ICON_Y, SPRITE_HEALTH);
     tg_tile7(STATUS_XP_ICON_X, STATUS_XP_ICON_Y, SPRITE_XP);
@@ -405,7 +396,7 @@ end;
   Parameters:
     - p: an instance of SLACPlayer (that represents the current player)
 }
-procedure render_interface_values(p: PSLACPlayer);
+procedure render_interface_values;
 var
     s: string[10];
     hp_w, xp_w: Integer;
@@ -413,41 +404,43 @@ var
     next_level: Longint;
 begin
     { Floor }
-    g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, '1', COLOR_WHITE);
+    Str(g_dungeon.get_current_floor, s);
+    g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, s, COLOR_WHITE);
+
     { Level }
-    Str(p^.get_level, s);
+    Str(g_player.get_level, s);
     g_font^.outTextRight(STATUS_LEVEL_TEXT_X, STATUS_LEVEL_TEXT_Y, s, COLOR_WHITE);
 
     { Health bar }
     {pct is a range from 0 to 100 - e.g 75 / 100HP = 7500 / 100 = 75}
-    hp_pct := (p^.get_hp * 100) div (p^.get_max_hp);
+    hp_pct := (g_player.get_hp * 100) div (g_player.get_max_hp);
     hp_w :=  (hp_pct * PLAYER_HP_W) div 100;
     tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, COLOR_RED);
 
     { XP bar }
-    next_level := get_xp_for_next_level(p^.get_level);
-    xp_pct := (p^.get_xp * 100) div next_level;
+    next_level := get_xp_for_next_level(g_player.get_level);
+    xp_pct := (g_player.get_xp * 100) div next_level;
     xp_w := (xp_pct * PLAYER_XP_W) div 100;
     tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, COLOR_GREEN);
 
     { Money }
-    Str(p^.get_money, s);
+    Str(g_player.get_money, s);
     g_font^.outTextRight(STATUS_MONEY_TEXT_X, STATUS_MONEY_TEXT_Y, s, COLOR_WHITE);
 
     { Atk }
-    Str(p^.get_atk, s);
+    Str(g_player.get_atk, s);
     g_font^.outTextRight(STAT_ATK_TEXT_X, STAT_ATK_TEXT_Y, s, COLOR_WHITE);
 
     { Def }
-    Str(p^.get_def, s);
+    Str(g_player.get_def, s);
     g_font^.outTextRight(STAT_DEF_TEXT_X, STAT_DEF_TEXT_Y, s, COLOR_WHITE);
 
     { Spd }
-    Str(p^.get_spd, s);
+    Str(g_player.get_spd, s);
     g_font^.outTextRight(STAT_SPEED_TEXT_X, STAT_SPEED_TEXT_Y, s, COLOR_WHITE);
 
     { Luck }
-    Str(p^.get_luck, s);
+    Str(g_player.get_luck, s);
     g_font^.outTextRight(STAT_LUCK_TEXT_X, STAT_LUCK_TEXT_Y, s, COLOR_WHITE);
 end;
 

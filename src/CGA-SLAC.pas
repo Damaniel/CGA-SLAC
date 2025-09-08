@@ -13,6 +13,7 @@ uses
   timer,    { 3rd party }
   txtgraph, { 3rd party }
   Globals,
+  State,
   Dungeon,
   Player,
   Render,
@@ -29,6 +30,7 @@ var
 
 procedure game_init;
 begin
+  Randomize;
   startTimer;
   g_TimerInterval := getUserClockInterval(FRAME_RATE);
   g_exit_game := False;
@@ -43,20 +45,16 @@ end;
 
 begin
 
-  Randomize;
   game_init;
-  g_player.Init;
-  g_dungeon.Init;
-  g_dungeon.generate(@g_generator, 1);
 
-  adjust_all_render_components(g_render_components, SET_ALL);
+  change_state(STATE_GAME);
 
   while g_exit_game = False do
   begin
     if (userTimerExpired(g_TimerInterval)) then
     begin
-      process_input(g_player, g_dungeon);
-      render_components(g_render_components);
+      process_input;
+      render_components;
     end;
   end;
 

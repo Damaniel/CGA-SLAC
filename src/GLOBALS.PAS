@@ -158,14 +158,15 @@ const
     SPRITE_ARROW =    89;
     SPRITE_XP =       90;
     SPRITE_LUCK =     91;
-    SPRITE_FLOOR =    92;
+    SPRITE_USTAIR =   92;
     SPRITE_MONEY =    93;
     SPRITE_LEVEL =    94;
     SPRITE_LPROG =    95;
     SPRITE_CPROG =    96;
     SPRITE_RPROG =    97;
     SPRITE_BLANK =    98;
-    NUM_SPRITES =     99;
+    SPRITE_DSTAIR =   99;
+    NUM_SPRITES =    100;
 
     { Weapon classes }
     WEAPON_DAGGER =    0;
