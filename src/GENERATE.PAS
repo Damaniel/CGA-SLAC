@@ -147,6 +147,7 @@ begin
                             generate_random_item(floor, item_idx, val);
                             gen_drop.item_class := SLAC_ITEM_TYPE;
                             gen_drop.amount := val;
+                            gen_drop.plus_mod := 0;
                          end;
     end;
     { Set the index into the appropriate drop table }

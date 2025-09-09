@@ -1262,16 +1262,22 @@ procedure SLACDungeon.pick_up_from_ground(x: Integer; y: Integer);
 var
    target_slot: Integer;
    gi: SLACItem;
-   s: String;
+   s, amt: String;
+   picked_up, picked_up_money: Boolean;
 begin
+   { By default, we haven't picked up an item, or money specifically }
+   picked_up := False;
+   picked_up_money := False;
    { Check if an item is there }
    if squares[x][y].item_list_idx <> NO_ITEM then
    begin
       gi := g_item_list[squares[x][y].item_list_idx];
       { if money, add to the player's money total }
-      if g_item_data[gi.item_idx].item_class = ITEM_MONEY then
+      if (gi.item_class = SLAC_ITEM_TYPE) and (g_item_data[gi.item_idx].item_class = ITEM_MONEY) then
       begin
          g_player.money := g_player.money + gi.amount;
+         picked_up := True;
+         picked_up_money := True;
       end
       else begin
          { If a non-money item of any kind, get a free inventory slot }
@@ -1280,16 +1286,45 @@ begin
          begin
             {  add the item to the inventory }
             add_new_to_inventory_at(target_slot, g_item_list[squares[x][y].item_list_idx]);
+            picked_up := True;
+         end
+         else begin
+            { There isn't a free inventory slot }
+            s := 'INVENTORY FULL!';
+            append_text_to_log(s);
          end;
       end;
-      {   - remove the item from the item list }
-      delete_item_list_item_at(squares[x][y].item_list_idx);
-      {   - remove the item index from the dungeon floor}
-      squares[x][y].item_list_idx := NO_ITEM;
 
-      { Append the pickup to the text log}
-      s := 'Got ' + g_item_data[g_inventory[target_slot].item.item_idx].name + '.';
-      append_text_to_log(s);
+      { Add the message about what was picked up to the log }
+      if picked_up = True then
+      begin
+         if picked_up_money = True then
+         begin
+            { If money, display a message that money (and how much) was picked up }
+            Str(gi.amount, amt);
+            s := 'GOT ' + amt + ' ' + get_item_name(SLAC_ITEM_TYPE, gi.item_idx) + '.';
+            append_text_to_log(s);
+         end
+         else begin
+            { Otherwise, display a message that an item was picked up }
+            s := 'GOT ' +
+              get_item_name(g_inventory[target_slot].item.item_class, g_inventory[target_slot].item.item_idx);
+            { If the item is a +x weapon or armor, add that to the log as well }
+            if g_inventory[target_slot].item.plus_mod > 0 then
+            begin
+               Str(g_inventory[target_slot].item.plus_mod, amt);
+               s := s + ' (+' + amt + ').';
+            end
+            else begin
+               s := s + '.';
+            end;
+            append_text_to_log(s);
+         end;
+
+         { Finally, rmove the item from the item list and dungeon floor }
+         delete_item_list_item_at(squares[x][y].item_list_idx);
+         squares[x][y].item_list_idx := NO_ITEM;
+      end;
    end;
 end;
 

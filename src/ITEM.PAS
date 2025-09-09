@@ -56,6 +56,7 @@ function get_first_available_item_list_slot : Integer;
 function get_first_available_inventory_slot : Integer;
 function is_item_list_slot_empty(slot: Integer) : Boolean;
 function is_inventory_slot_empty(slot: Integer) : Boolean;
+function get_item_name(item_class: Integer; idx: Integer) : String;
 procedure copy_item_to_item(var s_it: SLACItem; var d_it: SLACItem);
 procedure add_new_to_item_list_at(idx: Integer; var it: SLACItem);
 procedure add_new_to_inventory_at(idx: Integer; var it: SLACItem);
@@ -232,6 +233,17 @@ begin
     end;
 end;
 
+function get_item_name(item_class: Integer; idx: Integer) : String;
+begin
+    case item_class of
+        SLAC_WEAPON_TYPE: get_item_name := g_weapon_data[idx].name;
+        SLAC_ARMOR_TYPE:  get_item_name := g_armor_data[idx].name;
+        SLAC_ITEM_TYPE:   get_item_name := g_item_data[idx].name;
+    else
+        get_item_name := '<DUMMY>';
+    end;
+end;
+
 procedure dump_inventory;
 var
     idx: Integer;
@@ -294,13 +306,18 @@ begin
                             end;
                             if g_item_data[i.item_idx].item_class = ITEM_SCROLL then
                             begin
-                                Write('Scroll of ');
+                                Write('SCROLL OF ');
                             end;
                             if g_item_data[i.item_idx].item_class = ITEM_POTION then
                             begin
-                                Write('Potion of ');
+                                Write('POTION ');
                             end;
                             Writeln(g_item_data[i.item_idx].name);
+                            if i.plus_mod <> 0 then
+                            begin
+                                Write (' Warning - item has a plus mod of ');
+                                Writeln(i.plus_mod);
+                            end;
                         end;
     else
         Writeln('<Unknown>');

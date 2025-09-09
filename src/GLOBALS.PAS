@@ -215,67 +215,67 @@ const
 
     g_monster_data: array[0..NUM_MONSTERS-1] of MonsterTableEntryType =
         (
-          (name: 'Blue Slime';  min_floor: 1;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'BLUE SLIME';  min_floor: 1;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_BSLIME),
-          (name: 'Asp';         min_floor: 1;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'ASP';         min_floor: 1;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_ASP),
-          (name: 'Skeleton';    min_floor: 2;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'SKELETON';    min_floor: 2;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_SKEL),
-          (name: 'Bat';         min_floor: 2;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'BAT';         min_floor: 2;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_BAT),
-          (name: 'Ghost';       min_floor: 4;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'GHOST';       min_floor: 4;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_GHOST),
-          (name: 'Rock Golem';  min_floor: 4;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'ROCK GOLEM';  min_floor: 4;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_RGOLEM),
-          (name: 'Imp';         min_floor: 6;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'IMP';         min_floor: 6;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_IMP),
-          (name: 'Lizard';      min_floor: 6;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'LIZARD';      min_floor: 6;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_LIZARD),
-          (name: 'Star';        min_floor: 8;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'STAR';        min_floor: 8;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_STAR),
-          (name: 'Ooze';        min_floor: 8;  hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'OOZE';        min_floor: 8;  hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_OOZE),
-          (name: 'Red Slime';   min_floor: 10; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'RED SLIME';   min_floor: 10; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_RSLIME),
-          (name: 'Cobra';       min_floor: 10; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'COBRA';       min_floor: 10; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_COBRA),
-          (name: 'Red Skel';    min_floor: 12; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'RED SKEL';    min_floor: 12; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_RSKEL),
-          (name: 'Rabid Bat';   min_floor: 12; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'RABID BAT';   min_floor: 12; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_RBAT),
-          (name: 'Spectre';     min_floor: 14; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'SPECTRE';     min_floor: 14; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_SPECTRE),
-          (name: 'Stone Golem'; min_floor: 14; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'STONE GOLEM'; min_floor: 14; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_SGOLEM),
-          (name: 'Demon';       min_floor: 16; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'DEMON';       min_floor: 16; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_DEMON),
-          (name: 'Brontosaur';  min_floor: 16; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'BRONTOSAUR';  min_floor: 16; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_BRONTO),
-          (name: 'Nova';        min_floor: 18; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'NOVA';        min_floor: 18; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_NOVA),
-          (name: 'Sludge';      min_floor: 18; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'SLUDGE';      min_floor: 18; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_SLUDGE),
-          (name: 'Green Slime'; min_floor: 20; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'GREEN SLIME'; min_floor: 20; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_GSLIME),
-          (name: 'Mamba';       min_floor: 20; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'MAMBA';       min_floor: 20; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_MAMBA),
-          (name: 'Zombie Skel'; min_floor: 22; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'ZOMBIE SKEL'; min_floor: 22; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_ZSKEL),
-          (name: 'Vampire Bat'; min_floor: 22; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'VAMPIRE BAT'; min_floor: 22; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_VBAT),
-          (name: 'Poltergeist'; min_floor: 24; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'POLTERGEIST'; min_floor: 24; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_PGEIST),
-          (name: 'Plant Golem'; min_floor: 24; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'PLANT GOLEM'; min_floor: 24; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_PGOLEM),
-          (name: 'Devil';       min_floor: 26; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'DEVIL';       min_floor: 26; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_DEVIL),
-          (name: 'T-Rex';       min_floor: 26; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'T-REX';       min_floor: 26; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_TREX),
-          (name: 'Supernova';   min_floor: 28; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'SUPERNOVA';   min_floor: 28; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_SNOVA),
-          (name: 'Puddle';      min_floor: 28; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'PUDDLE';      min_floor: 28; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_PUDDLE),
-          (name: 'Megalith';    min_floor: 30; hp: 5; atk: 5; def: 5; spd: 100;
+          (name: 'MEGALITH';    min_floor: 30; hp: 5; atk: 5; def: 5; spd: 100;
            exp: 4; gold: 5; droprate: 64; tid: SPRITE_MEGALITH)
         );
 
@@ -364,24 +364,24 @@ const
     NUM_ITEMS = 18;
     g_item_data: array[0..NUM_ITEMS-1] of ItemTableEntryType =
     (
-      (name: 'Heal 1';   item_class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
-      (name: 'Heal 2';   item_class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
-      (name: 'Speed';    item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 2;  tid: SPRITE_POTION3),
-      (name: 'Attack';   item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 3;  tid: SPRITE_POTION4),
-      (name: 'Luck';     item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 4;  tid: SPRITE_POTION5),
-      (name: 'Harm';     item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 5;  tid: SPRITE_POTION6),
-      (name: 'Identify'; item_class: ITEM_SCROLL;  min_floor: 5;   rarity: 128; effect_id: 6;  tid: SPRITE_SCROLL1),
-      (name: 'Phase';    item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 7;  tid: SPRITE_SCROLL2),
-      (name: 'Up';       item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 8;  tid: SPRITE_SCROLL3),
-      (name: 'Armor';    item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 16;  effect_id: 9;  tid: SPRITE_SCROLL4),
-      (name: 'Confuse';  item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 64;  effect_id: 10; tid: SPRITE_SCROLL5),
-      (name: 'Summon';   item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 32;  effect_id: 11; tid: SPRITE_SCROLL6),
-      (name: 'Copper';   item_class: ITEM_MONEY;   min_floor: 1;   rarity: 255; effect_id: 12; tid: SPRITE_COPPER),
-      (name: 'Silver';   item_class: ITEM_MONEY;   min_floor: 3;   rarity: 224; effect_id: 13; tid: SPRITE_SILVER),
-      (name: 'Gold';     item_class: ITEM_MONEY;   min_floor: 5;   rarity: 176; effect_id: 14; tid: SPRITE_GOLD),
-      (name: 'Ruby';     item_class: ITEM_MONEY;   min_floor: 8;   rarity: 128; effect_id: 15; tid: SPRITE_RUBY),
-      (name: 'Emerald';  item_class: ITEM_MONEY;   min_floor: 12;  rarity: 96;  effect_id: 16; tid: SPRITE_EMERALD),
-      (name: 'Diamond';  item_class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND)
+      (name: 'HEAL 1 POTION';  item_class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
+      (name: 'HEAL 2 POTION';  item_class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
+      (name: 'SPEED POTION';   item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 2;  tid: SPRITE_POTION3),
+      (name: 'ATTACK POTION';  item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 3;  tid: SPRITE_POTION4),
+      (name: 'LUCK POTION';    item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 4;  tid: SPRITE_POTION5),
+      (name: 'HARM POTION';    item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 5;  tid: SPRITE_POTION6),
+      (name: 'IDENT SCROLL';   item_class: ITEM_SCROLL;  min_floor: 5;   rarity: 128; effect_id: 6;  tid: SPRITE_SCROLL1),
+      (name: 'PHASE SCROLL';   item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 7;  tid: SPRITE_SCROLL2),
+      (name: 'UP SCROLL';      item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 224; effect_id: 8;  tid: SPRITE_SCROLL3),
+      (name: 'ARMOR SCROLL';   item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 16;  effect_id: 9;  tid: SPRITE_SCROLL4),
+      (name: 'CONFUSE SCROLL'; item_class: ITEM_SCROLL;  min_floor: 1;   rarity: 64;  effect_id: 10; tid: SPRITE_SCROLL5),
+      (name: 'SUMMON SCROLL';  item_class: ITEM_SCROLL;  min_floor: 10;  rarity: 32;  effect_id: 11; tid: SPRITE_SCROLL6),
+      (name: 'COPPER';         item_class: ITEM_MONEY;   min_floor: 1;   rarity: 255; effect_id: 12; tid: SPRITE_COPPER),
+      (name: 'SILVER';         item_class: ITEM_MONEY;   min_floor: 3;   rarity: 224; effect_id: 13; tid: SPRITE_SILVER),
+      (name: 'GOLD';           item_class: ITEM_MONEY;   min_floor: 5;   rarity: 176; effect_id: 14; tid: SPRITE_GOLD),
+      (name: 'RUBY';           item_class: ITEM_MONEY;   min_floor: 8;   rarity: 128; effect_id: 15; tid: SPRITE_RUBY),
+      (name: 'EMERALD';        item_class: ITEM_MONEY;   min_floor: 12;  rarity: 96;  effect_id: 16; tid: SPRITE_EMERALD),
+      (name: 'DIAMOND';        item_class: ITEM_MONEY;   min_floor: 18;  rarity: 48;  effect_id: 17; tid: SPRITE_DIAMOND)
     );
 
     g_item_rarity_breakpoints: array[0..NUM_ITEMS-1] of Integer =
