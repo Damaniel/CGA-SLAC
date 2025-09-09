@@ -11,8 +11,10 @@ interface
 uses
     jfunc,
     Player,
+    Globals,
     Dungeon,
     Item,
+    Textlog,
     Render;
 
 procedure process_input;

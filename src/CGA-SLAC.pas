@@ -20,6 +20,7 @@ uses
   Enemy,
   Item,
   Generate,
+  Textlog,
   Input;
 
 const

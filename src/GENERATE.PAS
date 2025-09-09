@@ -1,5 +1,9 @@
-{ generators for enemies and items }
+{ GENERATE.PAS -  Item and enemy generators
 
+  Copyright 2025 Shaun Brandt
+
+  Licensed under the MIT license.  See LICENSE.md.
+}
 unit Generate;
 
 interface

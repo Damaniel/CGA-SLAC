@@ -17,7 +17,8 @@ uses
     Player,
     Item,
     Enemy,
-    Dungeon;
+    Dungeon,
+    Textlog;
 
 const
     { Used by adjust_all_render_components, to either set or clear all components at once }
@@ -150,22 +151,22 @@ const
     STAT_LEFT_TEXT_CLEAR_X2 = 22;
     STAT_RIGHT_TEXT_CLEAR_X1 = 31;
     STAT_RIGHT_TEXT_CLEAR_X2 = 43;
-type
 
-RenderComponentsType=record
-    render_interface: Boolean;
-    render_dungeon: Boolean;
-    render_interface_values: Boolean;
-    render_text_box: Boolean;
-end;
+    { Text log info }
+    VISIBLE_LOG_LINES = 2;
+    TEXT_LINE_X = 47;
+    TEXT_LINE_1_Y = 87;
+    TEXT_LINE_HEIGHT = 6;
+    TEXT_AREA_X1 = 46;
+    TEXT_AREA_Y1 = 86;
+    TEXT_AREA_X2 = 157;
+    TEXT_AREA_Y2 = 98;
 
 var
   { The tile sprite data. }
   g_GameTiles: tDynamicData;
   { Font data }
   g_font: pFontSet;
-  { Render components }
-  g_render_components: RenderComponentsType;
 
 procedure adjust_all_render_components(comp_val: Integer);
 procedure render_init;
@@ -239,6 +240,12 @@ begin
     begin
         render_dungeon_area(g_dungeon.player_x - 8, g_dungeon.player_y - 6);
         g_render_components.render_dungeon := False;
+    end;
+
+    if g_render_components.render_text_box = True then
+    begin
+        render_text_box;
+        g_render_components.render_text_box := False;
     end;
 end;
 
@@ -361,7 +368,21 @@ end;
 
 { render_text_box - draws the text box (and text log) on the screen }
 procedure render_text_box;
+var
+    idx: Integer;
+    row: Integer;
 begin
+    tg_bar(TEXT_AREA_X1, TEXT_AREA_Y1, TEXT_AREA_X2, TEXT_AREA_Y2, COLOR_BLACK);
+    row := NUM_LOG_ROWS - VISIBLE_LOG_LINES;
+
+    for idx := 0 to VISIBLE_LOG_LINES do
+    begin
+        if (row >= 0) and (row <= NUM_LOG_ROWS - 1) then
+        begin
+            g_font^.outText(TEXT_LINE_X, TEXT_LINE_1_Y + (idx * TEXT_LINE_HEIGHT), g_text_log[row], COLOR_WHITE);
+            row := row + 1;
+        end;
+    end;
 end;
 
 { render_interface - draws the static components of the main game screen }

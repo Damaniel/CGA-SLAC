@@ -13,6 +13,7 @@ uses
    Item,
    Globals,
    Player,
+   Textlog,
    Generate;
 
 const
@@ -1261,7 +1262,7 @@ procedure SLACDungeon.pick_up_from_ground(x: Integer; y: Integer);
 var
    target_slot: Integer;
    gi: SLACItem;
-   invi: SLACItem;
+   s: String;
 begin
    { Check if an item is there }
    if squares[x][y].item_list_idx <> NO_ITEM then
@@ -1285,6 +1286,10 @@ begin
       delete_item_list_item_at(squares[x][y].item_list_idx);
       {   - remove the item index from the dungeon floor}
       squares[x][y].item_list_idx := NO_ITEM;
+
+      { Append the pickup to the text log}
+      s := 'Got ' + g_item_data[g_inventory[target_slot].item.item_idx].name + '.';
+      append_text_to_log(s);
    end;
 end;
 

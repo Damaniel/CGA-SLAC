@@ -13,6 +13,7 @@ uses
   Player,
   Dungeon,
   Item,
+  Textlog,
   Render;
 
 const
@@ -45,6 +46,7 @@ begin
   g_dungeon.generate(@g_generator, 1);
   adjust_all_render_components(SET_ALL);
   clear_inventory;
+  clear_text_log;
 end;
 
 { do_change_to_inventory_state - does the initialization required when transitioning to STATE_INVENTORY }
