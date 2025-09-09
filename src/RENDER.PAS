@@ -25,6 +25,7 @@ const
     SET_ALL = 1;
 
     { Colors }
+    COLOR_BLACK = 0;
     COLOR_GREEN = 2;
     COLOR_CYAN = 3;
     COLOR_RED = 4;
@@ -140,6 +141,15 @@ const
     PLAYER_XP_Y = 44;
     PLAYER_XP_W = 31;
     PLAYER_XP_H =  3;
+
+    { Constants to help clear areas }
+    STATUS_TEXT_CLEAR_X1 = 10;
+    STATUS_TEXT_CLEAR_X2 = 42;
+    STATUS_TEXT_CLEAR_HEIGHT = 5;
+    STAT_LEFT_TEXT_CLEAR_X1 = 10;
+    STAT_LEFT_TEXT_CLEAR_X2 = 22;
+    STAT_RIGHT_TEXT_CLEAR_X1 = 31;
+    STAT_RIGHT_TEXT_CLEAR_X2 = 43;
 type
 
 RenderComponentsType=record
@@ -263,45 +273,55 @@ begin
         begin
             dt_x := left + x;
             dt_y := top + y;
-            { Draw fog of war for squares outside of the dungeon area }
-            if (dt_x < 0) or ((dt_x) > DUNGEON_WIDTH - 1) or
-               ((dt_y) < 0) or ((dt_y) > DUNGEON_HEIGHT - 1) then
+            { If in the middle spot (always occupied by the player), render the player sprite
+              instead.  This reduces the flicker from rendering him after the fact on slower
+              computers. }
+            if (x = DUNGEON_AREA_NUM_H_TILES div 2) and (y = DUNGEON_AREA_NUM_V_TILES div 2) then
             begin
-                render_fog_of_war(x, y, tile_x, tile_y);
+                tg_tile7(tile_x, tile_y, SPRITE_HERO);
             end
+            { Otherwise, determine what to draw here }
             else begin
-                { Draw fog of war if square isn't seen yet }
-                if g_dungeon.get_square_seen(dt_x, dt_y) = False then
+                { Draw fog of war for squares outside of the dungeon area }
+                if (dt_x < 0) or ((dt_x) > DUNGEON_WIDTH - 1) or
+                    ((dt_y) < 0) or ((dt_y) > DUNGEON_HEIGHT - 1) then
                 begin
                     render_fog_of_war(x, y, tile_x, tile_y);
                 end
                 else begin
-                    { Otherwise determine which dungeon square goes here and draw it }
-                    sq_type := g_dungeon.get_square_type(dt_x, dt_y);
-                    case sq_type of
-                        SQUARE_WALL: sprite := SPRITE_WALL1;
-                        SQUARE_FLOOR: sprite := SPRITE_BLANK;
-                        SQUARE_UP_STAIRS: sprite := SPRITE_USTAIR;
-                        SQUARE_DOWN_STAIRS: sprite := SPRITE_DSTAIR;
-                    end;
-                    tg_tile7(tile_x, tile_y, sprite);
-                    { If an item is here, render it }
-                    if g_dungeon.get_item(dt_x, dt_y) <> NO_ITEM then
+                    { Draw fog of war if square isn't seen yet }
+                    if g_dungeon.get_square_seen(dt_x, dt_y) = False then
                     begin
-                        { Determine what item it is and draw the appropriate one }
-                        it := g_item_list[g_dungeon.get_item(dt_x, dt_y)];
-                        case it.item_class of
-                            SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[it.item_idx].tid);
-                            SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[it.item_idx].tid);
-                            SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[it.item_idx].tid);
+                        render_fog_of_war(x, y, tile_x, tile_y);
+                    end
+                    else begin
+                        { Otherwise determine which dungeon square goes here and draw it }
+                        sq_type := g_dungeon.get_square_type(dt_x, dt_y);
+                        case sq_type of
+                            SQUARE_WALL: sprite := SPRITE_WALL1;
+                            SQUARE_FLOOR: sprite := SPRITE_BLANK;
+                            SQUARE_UP_STAIRS: sprite := SPRITE_USTAIR;
+                            SQUARE_DOWN_STAIRS: sprite := SPRITE_DSTAIR;
                         end;
-                    end;
-                    { If an enemy is here, render it }
-                    if g_dungeon.get_enemy(dt_x, dt_y) <> NO_ENEMY then
-                    begin
-                        s := g_enemy_list[g_dungeon.get_enemy(dt_x, dt_y)];
-                        enemy := s.enemy_idx;
-                        tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
+                        tg_tile7(tile_x, tile_y, sprite);
+                        { If an item is here, render it }
+                        if g_dungeon.get_item(dt_x, dt_y) <> NO_ITEM then
+                        begin
+                            { Determine what item it is and draw the appropriate one }
+                            it := g_item_list[g_dungeon.get_item(dt_x, dt_y)];
+                            case it.item_class of
+                                SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[it.item_idx].tid);
+                                SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[it.item_idx].tid);
+                                SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[it.item_idx].tid);
+                            end;
+                        end;
+                        { If an enemy is here, render it }
+                        if g_dungeon.get_enemy(dt_x, dt_y) <> NO_ENEMY then
+                        begin
+                            s := g_enemy_list[g_dungeon.get_enemy(dt_x, dt_y)];
+                            enemy := s.enemy_idx;
+                            tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
+                        end;
                     end;
                 end;
             end;
@@ -309,11 +329,6 @@ begin
         end;
         tile_y := tile_y + DUNGEON_AREA_TILE_HEIGHT;
     end;
-
-    { Render the player.  The player is always located in the middle of the play area. }
-    tg_tile7(DUNGEON_AREA_X + (DUNGEON_AREA_PX_WIDTH div 2),
-             DUNGEON_AREA_Y + (DUNGEON_AREA_PX_HEIGHT div 2), SPRITE_HERO);
-
 end;
 
 { render_fog_of_war - draws the invisible portion of the dungeon at the specified location
@@ -403,42 +418,58 @@ var
     next_level: Longint;
 begin
     { Floor }
+    tg_bar(STATUS_TEXT_CLEAR_X1, STATUS_DEPTH_TEXT_Y, STATUS_TEXT_CLEAR_X2,
+           STATUS_DEPTH_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_dungeon.floor, s);
     g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, s, COLOR_WHITE);
 
     { Level }
+    tg_bar(STATUS_TEXT_CLEAR_X1, STATUS_LEVEL_TEXT_Y, STATUS_TEXT_CLEAR_X2,
+           STATUS_LEVEL_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.level, s);
     g_font^.outTextRight(STATUS_LEVEL_TEXT_X, STATUS_LEVEL_TEXT_Y, s, COLOR_WHITE);
 
     { Health bar }
     {pct is a range from 0 to 100 - e.g 75 / 100HP = 7500 / 100 = 75}
+    tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + PLAYER_HP_W - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, COLOR_BLACK);
     hp_pct := (g_player.hp * 100) div (g_player.max_hp);
     hp_w :=  (hp_pct * PLAYER_HP_W) div 100;
     tg_bar(PLAYER_HP_X, PLAYER_HP_Y, PLAYER_HP_X + hp_w - 1, PLAYER_HP_Y + PLAYER_HP_H - 1, COLOR_RED);
 
     { XP bar }
+    tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + PLAYER_XP_W - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, COLOR_BLACK);
     next_level := get_xp_for_next_level(g_player.level);
     xp_pct := (g_player.xp * 100) div next_level;
     xp_w := (xp_pct * PLAYER_XP_W) div 100;
     tg_bar(PLAYER_XP_X, PLAYER_XP_Y, PLAYER_XP_X + xp_w - 1, PLAYER_XP_Y + PLAYER_XP_H - 1, COLOR_GREEN);
 
     { Money }
+    tg_bar(STATUS_TEXT_CLEAR_X1, STATUS_MONEY_TEXT_Y, STATUS_TEXT_CLEAR_X2,
+           STATUS_MONEY_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.money, s);
     g_font^.outTextRight(STATUS_MONEY_TEXT_X, STATUS_MONEY_TEXT_Y, s, COLOR_WHITE);
 
     { Atk }
+    tg_bar(STAT_LEFT_TEXT_CLEAR_X1, STAT_ATK_TEXT_Y, STAT_LEFT_TEXT_CLEAR_X2,
+           STAT_ATK_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.atk, s);
     g_font^.outTextRight(STAT_ATK_TEXT_X, STAT_ATK_TEXT_Y, s, COLOR_WHITE);
 
     { Def }
+    tg_bar(STAT_LEFT_TEXT_CLEAR_X1, STAT_DEF_TEXT_Y, STAT_LEFT_TEXT_CLEAR_X2,
+           STAT_DEF_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.def, s);
     g_font^.outTextRight(STAT_DEF_TEXT_X, STAT_DEF_TEXT_Y, s, COLOR_WHITE);
 
     { Spd }
+    tg_bar(STAT_RIGHT_TEXT_CLEAR_X1, STAT_SPEED_TEXT_Y, STAT_RIGHT_TEXT_CLEAR_X2,
+           STAT_SPEED_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.spd, s);
     g_font^.outTextRight(STAT_SPEED_TEXT_X, STAT_SPEED_TEXT_Y, s, COLOR_WHITE);
 
     { Luck }
+    tg_bar(STAT_RIGHT_TEXT_CLEAR_X1, STAT_LUCK_TEXT_Y, STAT_RIGHT_TEXT_CLEAR_X2,
+           STAT_LUCK_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
     Str(g_player.luck, s);
     g_font^.outTextRight(STAT_LUCK_TEXT_X, STAT_LUCK_TEXT_Y, s, COLOR_WHITE);
 end;

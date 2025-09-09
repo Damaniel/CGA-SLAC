@@ -39,7 +39,6 @@ procedure generate_random_drop(floor: Integer; var gen_drop: SLACItem);
 procedure generate_random_item(floor: Integer; var item_idx: Integer; var quant: Integer);
 procedure generate_random_weapon(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
 procedure generate_random_armor(floor: Integer; var item_idx: Integer; var plus_mod: Integer);
-procedure dump_item(i: SLACItem);
 function get_drop_at_breakpoint(r_table: array of Integer; idx: Integer) : Integer;
 function gen_check(floor: Integer; min_floor: Integer) : Boolean;
 function get_plus_mod_val : Integer;
@@ -413,57 +412,5 @@ begin
     end;
 end;
 
-{ dump_item - writes the name of an item as seen by the player
-
-  Parameters:
-    i: the item to dump
-}
-procedure dump_item(i: SLACItem);
-begin
-    case i.item_class of
-        SLAC_WEAPON_TYPE: begin
-                            Write(g_weapon_data[i.item_idx].name);
-                            if i.plus_mod > 0 then
-                            begin
-                                Write(' (+');
-                                Write(i.plus_mod);
-                                Writeln(')');
-                            end
-                            else begin
-                                Writeln('');
-                            end;
-                         end;
-        SLAC_ARMOR_TYPE: begin
-                            Write(g_armor_data[i.item_idx].name);
-                            if i.plus_mod > 0 then
-                            begin
-                                Write(' (+');
-                                Write(i.plus_mod);
-                                Writeln(')');
-                            end
-                            else begin
-                                Writeln('');
-                            end;
-                        end;
-        SLAC_ITEM_TYPE:  begin
-                            if g_item_data[i.item_idx].item_class = ITEM_MONEY then
-                            begin
-                                Write(i.amount);
-                                Write(' ');
-                            end;
-                            if g_item_data[i.item_idx].item_class = ITEM_SCROLL then
-                            begin
-                                Write('Scroll of ');
-                            end;
-                            if g_item_data[i.item_idx].item_class = ITEM_POTION then
-                            begin
-                                Write('Potion of ');
-                            end;
-                            Writeln(g_item_data[i.item_idx].name);
-                        end;
-    else
-        Writeln('<Unknown>');
-    end;
-end;
 
 end.

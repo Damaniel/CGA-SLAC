@@ -12,6 +12,7 @@ uses
    Enemy,
    Item,
    Globals,
+   Player,
    Generate;
 
 const
@@ -142,6 +143,8 @@ SLACDungeon=object
                                  var room_x: Integer; var room_y: Integer);
    procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
    procedure carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
+
+   procedure pick_up_from_ground(x: Integer; y: Integer);
 end;
 
 var
@@ -667,7 +670,7 @@ begin
          if item_list_idx <> -1 then
          begin
             { Add the item to the item list }
-            add_new_to_item_list_at(item_list_idx, @it);
+            add_new_to_item_list_at(item_list_idx, it);
             { Add the item index to the dungeon struct }
             add_item(item_x, item_y, item_list_idx);
          end;
@@ -1254,6 +1257,36 @@ begin
    end;
 end;
 
+procedure SLACDungeon.pick_up_from_ground(x: Integer; y: Integer);
+var
+   target_slot: Integer;
+   gi: SLACItem;
+   invi: SLACItem;
+begin
+   { Check if an item is there }
+   if squares[x][y].item_list_idx <> NO_ITEM then
+   begin
+      gi := g_item_list[squares[x][y].item_list_idx];
+      { if money, add to the player's money total }
+      if g_item_data[gi.item_idx].item_class = ITEM_MONEY then
+      begin
+         g_player.money := g_player.money + gi.amount;
+      end
+      else begin
+         { If a non-money item of any kind, get a free inventory slot }
+         target_slot := get_first_available_inventory_slot;
+         if target_slot <> -1 then
+         begin
+            {  add the item to the inventory }
+            add_new_to_inventory_at(target_slot, g_item_list[squares[x][y].item_list_idx]);
+         end;
+      end;
+      {   - remove the item from the item list }
+      delete_item_list_item_at(squares[x][y].item_list_idx);
+      {   - remove the item index from the dungeon floor}
+      squares[x][y].item_list_idx := NO_ITEM;
+   end;
+end;
 
 { dump - debug function that prints a copy of the dungeon to the console.}
 procedure SLACDungeon.dump;
@@ -1261,7 +1294,7 @@ var
    x: Integer;
    y: Integer;
 begin
-{   Writeln('--------------------------------------');
+   Writeln('--------------------------------------');
    Writeln('Dungeon map');
    Writeln('--------------------------------------');
    for y := 0 to DUNGEON_HEIGHT - 1 do
@@ -1313,7 +1346,7 @@ begin
          end;
       end;
       Writeln('');
-   end;}
+   end;
 end;
 
 end.

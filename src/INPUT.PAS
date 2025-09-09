@@ -12,6 +12,7 @@ uses
     jfunc,
     Player,
     Dungeon,
+    Item,
     Render;
 
 procedure process_input;
@@ -84,6 +85,14 @@ begin
                 g_dungeon.light_area(x+1, y);
                 moved := True;
             end;
+        end;
+
+        { Pick up item }
+        if (keyRead = 'g') and (extendedKey = False) then
+        begin
+            g_dungeon.pick_up_from_ground(g_dungeon.player_x, g_dungeon.player_y);
+            g_render_components.render_dungeon := True;
+            g_render_components.render_interface_values := True;
         end;
 
         if keyRead = #27 then begin

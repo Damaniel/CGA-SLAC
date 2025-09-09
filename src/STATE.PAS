@@ -4,7 +4,6 @@
 
   Licensed under the MIT license.  See LICENSE.md.
 }
-
 unit State;
 
 interface
@@ -13,6 +12,7 @@ uses
   Globals,
   Player,
   Dungeon,
+  Item,
   Render;
 
 const
@@ -31,24 +31,33 @@ procedure change_state(new_state: Integer);
 
 implementation
 
+{ do_change_to_title_state - does the initialization required when transitioning to STATE_TITLE }
 procedure do_change_to_title_state;
 begin
 
 end;
 
+{ do_change_to_game_state - does the initialization required when transitioning to STATE_GAME }
 procedure do_change_to_game_state;
 begin
   g_player.Init;
   g_dungeon.Init;
   g_dungeon.generate(@g_generator, 1);
   adjust_all_render_components(SET_ALL);
+  clear_inventory;
 end;
 
+{ do_change_to_inventory_state - does the initialization required when transitioning to STATE_INVENTORY }
 procedure do_change_to_inventory_state;
 begin
 
 end;
 
+{ change_state - changes the current game state
+
+  Parameters
+    new_state: the state to change to
+}
 procedure change_state(new_state: Integer);
 begin
     g_previous_state := g_current_state;

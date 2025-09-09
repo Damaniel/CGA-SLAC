@@ -18,6 +18,7 @@ uses
   Player,
   Render,
   Enemy,
+  Item,
   Generate,
   Input;
 
@@ -54,6 +55,7 @@ begin
     if (userTimerExpired(g_TimerInterval)) then
     begin
       process_input;
+      tg_waitRetrace;
       render_components;
     end;
   end;
