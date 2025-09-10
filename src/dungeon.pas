@@ -117,7 +117,7 @@ SLACDungeon=object
    squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
 
    procedure Init;
-   procedure generate(gen: PDungeonGenerator);
+   procedure generate(gen: PDungeonGenerator; direction: Integer);
    procedure initialize_square(x: Integer; y: Integer);
    procedure generate_initial_enemies(count: Integer);
    procedure generate_initial_items(count: Integer);
@@ -555,7 +555,7 @@ begin
 end;
 
 
-procedure SLACDungeon.generate(gen: PDungeonGenerator);
+procedure SLACDungeon.generate(gen: PDungeonGenerator; direction: Integer);
 var
    idx: Integer;
    e: SLACEnemy;
@@ -568,8 +568,18 @@ begin
    clear_item_list;
    generate_initial_enemies(20);
    generate_initial_items(10);
-   player_x := up_stair_x;
-   player_y := up_stair_y;
+   { If the player is going down, put them on an up stair.
+     If the player is going up, put them on a down stair. }
+   if direction = DIRECTION_DOWN then
+   begin
+      player_x := up_stair_x;
+      player_y := up_stair_y;
+   end
+   else begin
+      player_x := down_stair_x;
+      player_y := down_stair_y;
+   end;
+
    light_area(player_x, player_y);
 end;
 

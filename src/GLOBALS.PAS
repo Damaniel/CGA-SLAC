@@ -207,6 +207,10 @@ const
     DEFAULT_WEAPON_IDX = 0;
     DEFAULT_ARMOR_IDX = 0;
 
+    { The direction the player is heading on the stairs (down or up) }
+    DIRECTION_DOWN = 0;
+    DIRECTION_UP = 1;
+
     { A generic 'nothing' value for enemy and item uids }
     NOTHING = -1;
 

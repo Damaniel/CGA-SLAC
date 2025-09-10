@@ -98,6 +98,23 @@ begin
             g_render_components.render_interface_values := True;
         end;
 
+        { Go up stairs }
+        if (keyRead = '<') and (extendedKey = False) then
+        begin
+            if (g_dungeon.player_x = g_dungeon.up_stair_x) and
+               (g_dungeon.player_y = g_dungeon.up_stair_y) then
+            begin
+                { If not on the top floor, make a new floor}
+                if (g_depth > 1) then
+                begin
+                    create_SLAC_dungeon(g_depth - 1, DIRECTION_UP);
+                end
+                { Otherwise, end the game regardless of status }
+                else begin
+                end;
+            end;
+        end;
+
         { Go down stairs }
         if (keyRead = '>') and (extendedKey = False) then
         begin
@@ -105,7 +122,7 @@ begin
                (g_dungeon.player_y = g_dungeon.down_stair_y) and
                (g_depth < NUM_FLOORS - 1) then
             begin
-                create_SLAC_dungeon(g_depth + 1);
+                create_SLAC_dungeon(g_depth + 1, DIRECTION_DOWN);
             end;
         end;
 

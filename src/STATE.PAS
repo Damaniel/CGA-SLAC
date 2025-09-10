@@ -29,18 +29,18 @@ procedure do_change_to_title_state;
 procedure do_change_to_game_state;
 procedure do_change_to_inventory_state;
 procedure change_state(new_state: Integer);
-procedure create_SLAC_dungeon(floor: Integer);
+procedure create_SLAC_dungeon(floor: Integer; direction: Integer);
 
 implementation
 
 { ------ Miscellaneous ------ }
-procedure create_SLAC_dungeon(floor: Integer);
+procedure create_SLAC_dungeon(floor: Integer; direction: Integer);
 var
    s, s2: String;
 begin
   g_dungeon.Init;
   g_depth := floor;
-  g_dungeon.generate(@g_generator);
+  g_dungeon.generate(@g_generator, direction);
   clear_text_log;
   Str(g_depth, s2);
   s := 'YOU ENTER LEVEL ' + s2 + '.';
@@ -59,7 +59,7 @@ procedure do_change_to_game_state;
 begin
   g_player.Init;
   clear_inventory;
-  create_SLAC_dungeon(1);
+  create_SLAC_dungeon(1, DIRECTION_DOWN);
 end;
 
 { do_change_to_inventory_state - does the initialization required when transitioning to STATE_INVENTORY }
