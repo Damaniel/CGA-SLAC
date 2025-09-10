@@ -1,4 +1,4 @@
-{ STATE.PAS - state machine management
+{ STATE.PAS - state machine management and associated helpers
 
   Copyright 2025 Shaun Brandt
 
@@ -29,8 +29,24 @@ procedure do_change_to_title_state;
 procedure do_change_to_game_state;
 procedure do_change_to_inventory_state;
 procedure change_state(new_state: Integer);
+procedure create_SLAC_dungeon(floor: Integer);
 
 implementation
+
+{ ------ Miscellaneous ------ }
+procedure create_SLAC_dungeon(floor: Integer);
+var
+   s, s2: String;
+begin
+  g_dungeon.Init;
+  g_depth := floor;
+  g_dungeon.generate(@g_generator);
+  clear_text_log;
+  Str(g_depth, s2);
+  s := 'YOU ENTER LEVEL ' + s2 + '.';
+  append_text_to_log(s);
+  adjust_all_render_components(SET_ALL);
+end;
 
 { do_change_to_title_state - does the initialization required when transitioning to STATE_TITLE }
 procedure do_change_to_title_state;
@@ -42,11 +58,8 @@ end;
 procedure do_change_to_game_state;
 begin
   g_player.Init;
-  g_dungeon.Init;
-  g_dungeon.generate(@g_generator, 1);
-  adjust_all_render_components(SET_ALL);
   clear_inventory;
-  clear_text_log;
+  create_SLAC_dungeon(1);
 end;
 
 { do_change_to_inventory_state - does the initialization required when transitioning to STATE_INVENTORY }

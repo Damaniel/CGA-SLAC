@@ -111,14 +111,13 @@ end;
 
 { SLACDungeon - the complete carved dungeon }
 SLACDungeon=object
-   floor: Byte;
    up_stair_x, up_stair_y: Byte;
    down_stair_x, down_stair_y: Byte;
    player_x, player_y: Byte;
    squares: array[0..DUNGEON_WIDTH-1, 0..DUNGEON_HEIGHT-1] of DungeonSquareType;
 
    procedure Init;
-   procedure generate(gen: PDungeonGenerator; cur_floor: Byte);
+   procedure generate(gen: PDungeonGenerator);
    procedure initialize_square(x: Integer; y: Integer);
    procedure generate_initial_enemies(count: Integer);
    procedure generate_initial_items(count: Integer);
@@ -127,7 +126,6 @@ SLACDungeon=object
    procedure set_square_type(x: Integer; y: Integer; square_type: Byte);
    procedure set_square_seen(x: Integer; y: Integer; seen: Boolean);
    procedure set_square_in_room(x: Integer; y: Integer; in_room: Boolean);
-   procedure set_current_floor(f: Byte);
    procedure set_player_pos(x: Byte; y: Byte);
    procedure light_area(x: Integer; y: Integer);
    procedure get_room_extents(x: byte; y: Byte; var x1: Byte; var y1: Byte; var x2: Byte; var y2: Byte);
@@ -152,6 +150,9 @@ var
   { The main dungeon and associated generator. }
   g_dungeon: SLACDungeon;
   g_generator: DungeonGenerator;
+
+  { The current dungeon floor }
+  g_depth: Integer;
 
 implementation
 
@@ -537,7 +538,6 @@ var
    x: Integer;
    y: Integer;
 begin
-   floor := 0;
    up_stair_x := 0;
    up_stair_y := 0;
    down_stair_x := 0;
@@ -555,12 +555,11 @@ begin
 end;
 
 
-procedure SLACDungeon.generate(gen: PDungeonGenerator; cur_floor: Byte);
+procedure SLACDungeon.generate(gen: PDungeonGenerator);
 var
    idx: Integer;
    e: SLACEnemy;
 begin
-   floor := cur_floor;
    gen^.Init;
    gen^.generate;
    create_from_gen_data(gen);
@@ -604,7 +603,7 @@ begin
    }
    for idx := 0 to count - 1 do
    begin
-      generate_random_enemy(floor, enemy_idx);
+      generate_random_enemy(g_depth, enemy_idx);
       legal_location := False;
       while legal_location = False do
       begin
@@ -651,7 +650,7 @@ begin
    }
    for idx := 0 to count do
    begin
-      generate_random_drop(floor, it);
+      generate_random_drop(g_depth, it);
       legal_location := False;
       while legal_location = False do
       begin
@@ -748,14 +747,6 @@ begin
    else begin
       squares[x][y].flags := squares[x][y].flags and $df;
    end;
-end;
-
-{ set_current_floor: setter for floor }
-procedure SLACDungeon.set_current_floor(f: Byte);
-begin
-   floor := f;
-   if floor < 1 then floor := 1;
-   if floor > NUM_FLOORS then floor := NUM_FLOORS;
 end;
 
 procedure SLACDungeon.set_player_pos(x: Byte; y: Byte);
@@ -1140,19 +1131,23 @@ begin
    up_stair_x := stair_x;
    up_stair_y := stair_y;
 
-   { Get a random room position from the down stairs region }
-   down_stair_region := gen^.down_stair_region;
-   gen^.get_region(down_stair_region, dgt);
-   gen^.region_to_xy(down_stair_region, region_x, region_y);
-   room_top := region_y * REGION_HEIGHT + dgt.room_y;
-   room_left := region_x * REGION_WIDTH + dgt.room_x;
-   get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
-                       room_top + dgt.room_height - 1, stair_x, stair_y);
+   { Only generate down stairs above the bottom floor}
+   if (g_depth < NUM_FLOORS) then
+   begin
+      { Get a random room position from the down stairs region }
+      down_stair_region := gen^.down_stair_region;
+      gen^.get_region(down_stair_region, dgt);
+      gen^.region_to_xy(down_stair_region, region_x, region_y);
+      room_top := region_y * REGION_HEIGHT + dgt.room_y;
+      room_left := region_x * REGION_WIDTH + dgt.room_x;
+      get_random_room_pos(room_left, room_top, room_left + dgt.room_width - 1,
+                          room_top + dgt.room_height - 1, stair_x, stair_y);
 
-   { Add down stairs }
-   set_square_type(stair_x, stair_y, SQUARE_DOWN_STAIRS);
-   down_stair_x := stair_x;
-   down_stair_y := stair_y;
+      { Add down stairs }
+      set_square_type(stair_x, stair_y, SQUARE_DOWN_STAIRS);
+      down_stair_x := stair_x;
+      down_stair_y := stair_y;
+   end;
 end;
 
 { get_random_room_pos - returns a random position within the region specified by (x1,y1)-(x2,y2).
@@ -1388,5 +1383,6 @@ begin
       Writeln('');
    end;
 end;
+
 
 end.

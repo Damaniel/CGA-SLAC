@@ -441,7 +441,7 @@ begin
     { Floor }
     tg_bar(STATUS_TEXT_CLEAR_X1, STATUS_DEPTH_TEXT_Y, STATUS_TEXT_CLEAR_X2,
            STATUS_DEPTH_TEXT_Y + STATUS_TEXT_CLEAR_HEIGHT, COLOR_BLACK);
-    Str(g_dungeon.floor, s);
+    Str(g_depth, s);
     g_font^.outTextRight(STATUS_DEPTH_TEXT_X, STATUS_DEPTH_TEXT_Y, s, COLOR_WHITE);
 
     { Level }

@@ -364,8 +364,8 @@ const
     NUM_ITEMS = 18;
     g_item_data: array[0..NUM_ITEMS-1] of ItemTableEntryType =
     (
-      (name: 'HEAL 1 POTION';  item_class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
-      (name: 'HEAL 2 POTION';  item_class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
+      (name: 'LOHEAL POTION';  item_class: ITEM_POTION;  min_floor: 1;   rarity: 255; effect_id: 0;  tid: SPRITE_POTION1),
+      (name: 'HIHEAL POTION';  item_class: ITEM_POTION;  min_floor: 15;  rarity: 64;  effect_id: 1;  tid: SPRITE_POTION2),
       (name: 'SPEED POTION';   item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 2;  tid: SPRITE_POTION3),
       (name: 'ATTACK POTION';  item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 3;  tid: SPRITE_POTION4),
       (name: 'LUCK POTION';    item_class: ITEM_POTION;  min_floor: 5;   rarity: 32;  effect_id: 4;  tid: SPRITE_POTION5),

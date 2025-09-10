@@ -15,6 +15,7 @@ uses
     Dungeon,
     Item,
     Textlog,
+    State,
     Render;
 
 procedure process_input;
@@ -95,6 +96,17 @@ begin
             g_dungeon.pick_up_from_ground(g_dungeon.player_x, g_dungeon.player_y);
             g_render_components.render_dungeon := True;
             g_render_components.render_interface_values := True;
+        end;
+
+        { Go down stairs }
+        if (keyRead = '>') and (extendedKey = False) then
+        begin
+            if (g_dungeon.player_x = g_dungeon.down_stair_x) and
+               (g_dungeon.player_y = g_dungeon.down_stair_y) and
+               (g_depth < NUM_FLOORS - 1) then
+            begin
+                create_SLAC_dungeon(g_depth + 1);
+            end;
         end;
 
         if keyRead = #27 then begin

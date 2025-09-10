@@ -126,7 +126,7 @@ end;
 
 procedure add_new_to_item_list_at(idx: Integer; var it: SLACItem);
 begin
-    if (idx >= 0) and (idx < MAX_DUNGEON_ITEMS - 1) then
+    if (idx >= 0) and (idx <= MAX_DUNGEON_ITEMS - 1) then
     begin
         copy_item_to_item(it, g_item_list[idx]);
     end
@@ -137,7 +137,7 @@ end;
 
 procedure add_new_to_inventory_at(idx: Integer; var it: SLACItem);
 begin
-    if (idx >=0) and (idx < MAX_INVENTORY_SIZE - 1) then
+    if (idx >=0) and (idx <= MAX_INVENTORY_SIZE - 1) then
     begin
         copy_item_to_item(it, g_inventory[idx].item);
         g_inventory[idx].item_here := True;
