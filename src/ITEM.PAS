@@ -38,7 +38,6 @@ end;
 SLACInventoryItem=record
     item_here: Boolean;
     item: SLACitem;
-    quantity: Integer;
 end;
 
 PSLACItem=^SLACItem;
@@ -141,11 +140,6 @@ begin
     begin
         copy_item_to_item(it, g_inventory[idx].item);
         g_inventory[idx].item_here := True;
-        { All non-currency items stack.  Currency items are handled elsewhere }
-        if g_inventory[idx].item.item_class = SLAC_ITEM_TYPE then
-        begin
-            g_inventory[idx].quantity := g_inventory[idx].quantity + 1;
-        end;
     end
     else begin
         Writeln('Warning: item index out of range');
@@ -175,7 +169,6 @@ begin
     begin
         clear_item(g_inventory[slot].item);
         g_inventory[slot].item_here := False;
-        g_inventory[slot].quantity := 0;
     end;
 end;
 

@@ -19,33 +19,30 @@ uses
     Render;
 
 procedure process_input;
+procedure process_game_state_input(keyRead: char; extendedKey: Boolean);
+procedure process_inventory_input(keyRead: char; extendedKey: Boolean);
+procedure process_title_state_input(keyRead: char; extendedKey: Boolean);
 
 var
     g_exit_game: Boolean;
 
 implementation
 
-{ process_input - gets and handle keypresses }
-procedure process_input;
-var
-  keyRead: Char;
-  extendedKey: Boolean;
-  status: Integer;
-  x, y: Byte;
-  sq: Byte;
-  moved: Boolean;
+procedure process_title_state_input(keyRead: char; extendedKey: Boolean);
 begin
-    { If a key press (normal or extended) is detected, figure out what it is and process appropriately. }
-    if keypressed then begin
-        keyRead := readkey;
-        extendedKey := False;
+end;
 
-        { Detect extended keypress. }
-        if (keyRead = #0) then begin
-            extendedKey := True;
-            keyRead := readkey;
-        end;
-
+procedure process_game_state_input(keyRead: char; extendedKey: Boolean);
+var
+    x, y: Byte;
+    sq: Byte;
+    moved: Boolean;
+begin
+    if g_substate = SUBSTATE_GAME_INVENTORY then
+    begin
+        process_inventory_input(keyRead, extendedKey);
+    end
+    else begin
         x := g_dungeon.player_x;
         y := g_dungeon.player_y;
         moved := False;
@@ -132,6 +129,40 @@ begin
 
         if moved = True then begin
             g_render_components.render_dungeon := True;
+        end;
+    end;
+end;
+
+procedure process_inventory_input(keyRead: Char; extendedKey: Boolean);
+begin
+    if keyRead = #27 then
+    begin
+        g_substate := SUBSTATE_GAME_DEFAULT;
+        adjust_all_render_components(SET_ALL);
+    end;
+end;
+
+{ process_input - gets and handle keypresses }
+procedure process_input;
+var
+  keyRead: Char;
+  extendedKey: Boolean;
+begin
+    { If a key press (normal or extended) is detected, figure out what it is and process appropriately. }
+    if keypressed then begin
+        keyRead := readkey;
+        extendedKey := False;
+
+        { Detect extended keypress. }
+        if (keyRead = #0) then begin
+            extendedKey := True;
+            keyRead := readkey;
+        end;
+
+        { Select what to do based on the game state }
+        case g_current_state of
+            STATE_TITLE: process_title_state_input(keyRead, extendedKey);
+            STATE_GAME: process_game_state_input(keyRead, extendedKey);
         end;
     end;
 end;

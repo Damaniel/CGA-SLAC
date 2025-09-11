@@ -19,11 +19,13 @@ uses
 const
   STATE_TITLE = 0;
   STATE_GAME = 1;
-  STATE_INVENTORY = 2;
+
+  SUBSTATE_GAME_DEFAULT = 0;
+  SUBSTATE_GAME_INVENTORY = 1;
 
 var
   g_current_state: Integer;
-  g_previous_state: Integer;
+  g_substate: Integer;
 
 procedure do_change_to_title_state;
 procedure do_change_to_game_state;
@@ -57,6 +59,8 @@ end;
 { do_change_to_game_state - does the initialization required when transitioning to STATE_GAME }
 procedure do_change_to_game_state;
 begin
+  { Set the 'default' substate for the game. }
+  g_substate := SUBSTATE_GAME_DEFAULT;
   g_player.Init;
   clear_inventory;
   create_SLAC_dungeon(1, DIRECTION_DOWN);
@@ -75,7 +79,6 @@ end;
 }
 procedure change_state(new_state: Integer);
 begin
-    g_previous_state := g_current_state;
     g_current_state := new_state;
 
     case g_current_state of
@@ -85,9 +88,6 @@ begin
         STATE_GAME:  begin
                       do_change_to_game_state;
                      end;
-        STATE_INVENTORY: begin
-                          do_change_to_inventory_state;
-                         end;
     else
         Writeln('Warning: unknown state');
     end;
