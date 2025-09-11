@@ -233,7 +233,7 @@ begin
         SLAC_ARMOR_TYPE:  get_item_name := g_armor_data[idx].name;
         SLAC_ITEM_TYPE:   get_item_name := g_item_data[idx].name;
     else
-        get_item_name := '<DUMMY>';
+        get_item_name := '';
     end;
 end;
 

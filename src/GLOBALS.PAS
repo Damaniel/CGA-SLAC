@@ -58,6 +58,7 @@ ItemTableEntryType = record
     tid: Byte;
 end;
 
+{ Components that can be rendered to the screen }
 RenderComponentsType=record
     render_interface: Boolean;
     render_dungeon: Boolean;
@@ -66,6 +67,12 @@ RenderComponentsType=record
     render_inventory_ui: Boolean;
     render_inventory_items: Boolean;
     render_inventory_highlight: Boolean;
+end;
+
+{ Items needed to determine what portion of the inventory to render }
+InventoryRenderType=record
+    index: Byte;
+    page: Byte;
 end;
 
 const
@@ -223,6 +230,10 @@ const
 
     SUBSTATE_GAME_DEFAULT = 0;
     SUBSTATE_GAME_INVENTORY = 1;
+
+    { Inventory page counts }
+    INVENTORY_ITEMS_PER_PAGE = 8;
+    NUM_INVENTORY_PAGES = 3; { 20 items, 8 per page with 4 on the last page }
 
     { Monster data }
     NUM_MONSTERS = 31;
@@ -411,12 +422,15 @@ const
         );
 
 var
-  { Render components }
-  g_render_components: RenderComponentsType;
+    { Render components }
+    g_render_components: RenderComponentsType;
 
-  { Game state / substate }
-  g_current_state: Integer;
-  g_substate: Integer;
+    { Inventory and cursor position components }
+    g_inventory_pos_components: InventoryRenderType;
+
+    { Game state / substate }
+    g_current_state: Integer;
+    g_substate: Integer;
 
 implementation
 

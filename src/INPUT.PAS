@@ -148,6 +148,25 @@ begin
         g_substate := SUBSTATE_GAME_DEFAULT;
         adjust_game_render_components(SET_ALL);
     end;
+
+    if (key_read = 'n') and (extended_key = False) then
+    begin
+        if g_inventory_pos_components.page < (NUM_INVENTORY_PAGES - 1) then
+        begin
+            g_inventory_pos_components.page := g_inventory_pos_components.page + 1;
+            adjust_inventory_render_components(SET_ALL);
+        end;
+    end;
+
+    if (key_read = 'p') and (extended_key = False) then
+    begin
+        if g_inventory_pos_components.page > 0 then
+        begin
+            g_inventory_pos_components.page := g_inventory_pos_components.page - 1;
+            adjust_inventory_render_components(SET_ALL);
+        end;
+    end;
+
 end;
 
 { process_input - gets and handle keypresses }

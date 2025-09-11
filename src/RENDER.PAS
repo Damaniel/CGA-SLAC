@@ -27,10 +27,12 @@ const
 
     { Colors }
     COLOR_BLACK = 0;
+    COLOR_BLUE = 1;
     COLOR_GREEN = 2;
     COLOR_CYAN = 3;
     COLOR_RED = 4;
     COLOR_MAGENTA = 5;
+    COLOR_DARKGRAY = 8;
     COLOR_YELLOW = 14;
     COLOR_WHITE = 15;
 
@@ -143,6 +145,54 @@ const
     PLAYER_XP_W = 31;
     PLAYER_XP_H =  3;
 
+    { The inventory box }
+    INVENTORY_BOX_X1 = 48;
+    INVENTORY_BOX_Y1 = 3;
+    INVENTORY_BOX_X2 = 155;
+    INVENTORY_BOX_Y2 = 82;
+    INVENTORY_TOP_LINE_X1 = 48;
+    INVENTORY_TOP_LINE_X2 = 155;
+    INVENTORY_TOP_LINE_Y = 11;
+    INVENTORY_BOTTOM_LINE_X1 = 48;
+    INVENTORY_BOTTOM_LINE_X2 = 155;
+    INVENTORY_BOTTOM_LINE_Y = 74;
+
+    { The inventory text }
+    INVENTORY_TEXT_X = 81;
+    INVENTORY_TEXT_Y =  5;
+    PREV_TEXT1_X  = 52;
+    PREV_TEXT2_X  = 56;
+    PREV_TEXT_Y   = 76;
+    NEXT_TEXT1_X  = 136;
+    NEXT_TEXT2_X  = 141;
+    NEXT_TEXT_Y   = 76;
+    EQUIP_TEXT1_X = 74;
+    EQUIP_TEXT2_X = 78;
+    EQUIP_TEXT_Y  = 76;
+    DROP_TEXT1_X  = 98;
+    DROP_TEXT2_X  = 102;
+    DROP_TEXT_Y   = 76;
+    USE_TEXT1_X   = 117;
+    USE_TEXT2_X   = 121;
+    USE_TEXT_Y    = 76;
+
+    { The inventory items }
+    INV_TOP_ITEM_X  = 60;
+    INV_TOP_ITEM_Y  = 16;
+    INV_ITEM_OFFSET =  7;
+
+    { The 'E' for equipped items }
+    INV_EQUIP_X =     51;
+    INV_TOP_EQUIP_Y = 16;
+    INV_EQUIP_OFFSET = 7;
+
+    { The location and size of the highlighted item }
+    INV_TOP_HI_X1 = 56;
+    INV_TOP_HI_Y1 = 15;
+    INV_TOP_HI_X2 = 152;
+    INV_TOP_HI_Y2 = 21;
+    INV_HI_OFFSET = 7;
+
     { Constants to help clear areas }
     STATUS_TEXT_CLEAR_X1 = 10;
     STATUS_TEXT_CLEAR_X2 = 42;
@@ -163,10 +213,10 @@ const
     TEXT_AREA_Y2 = 98;
 
 var
-  { The tile sprite data. }
-  g_GameTiles: tDynamicData;
-  { Font data }
-  g_font: pFontSet;
+    { The tile sprite data. }
+    g_GameTiles: tDynamicData;
+    { Font data }
+    g_font: pFontSet;
 
 procedure adjust_game_render_components(comp_val: Integer);
 procedure adjust_inventory_render_components(comp_val: Integer);
@@ -236,8 +286,83 @@ begin
 end;
 
 procedure render_inventory_components;
+var
+    start_index, end_index: Integer;
+    full_name: String;
+    plus_val: String;
+    idx: Integer;
 begin
+    { The background }
+    if g_render_components.render_inventory_ui = True then
+    begin
+        { The main area }
+        tg_rectangle(INVENTORY_BOX_X1, INVENTORY_BOX_Y1, INVENTORY_BOX_X2, INVENTORY_BOX_Y2, COLOR_WHITE);
+        tg_bar(INVENTORY_BOX_X1 + 1, INVENTORY_BOX_Y1 + 1, INVENTORY_BOX_X2 - 1, INVENTORY_BOX_Y2 - 1, COLOR_BLUE);
+        { The top and bottom bars }
+        tg_rectangle(INVENTORY_TOP_LINE_X1, INVENTORY_TOP_LINE_Y,
+                     INVENTORY_TOP_LINE_X2, INVENTORY_TOP_LINE_Y, COLOR_WHITE);
+        tg_rectangle(INVENTORY_BOTTOM_LINE_X1, INVENTORY_BOTTOM_LINE_Y,
+                     INVENTORY_BOTTOM_LINE_X2, INVENTORY_BOTTOM_LINE_Y, COLOR_WHITE);
 
+        { The text }
+        g_font^.outText(INVENTORY_TEXT_X, INVENTORY_TEXT_Y, 'INVENTORY', COLOR_WHITE);
+        g_font^.outText(EQUIP_TEXT1_X, EQUIP_TEXT_Y, 'E', COLOR_YELLOW);
+        g_font^.outText(EQUIP_TEXT2_X, EQUIP_TEXT_Y, 'QUIP', COLOR_WHITE);
+        g_font^.outText(DROP_TEXT1_X, DROP_TEXT_Y, 'D', COLOR_YELLOW);
+        g_font^.outText(DROP_TEXT2_X, DROP_TEXT_Y, 'ROP', COLOR_WHITE);
+        g_font^.outText(USE_TEXT1_X, USE_TEXT_Y, 'U', COLOR_YELLOW);
+        g_font^.outText(USE_TEXT2_X, USE_TEXT_Y, 'SE', COLOR_WHITE);
+        { Draw PREV in gray if on the first page, normally otherwise }
+        if g_inventory_pos_components.page <> 0 then
+        begin
+            g_font^.outText(PREV_TEXT1_X, PREV_TEXT_Y, 'P', COLOR_YELLOW);
+            g_font^.outText(PREV_TEXT2_X, PREV_TEXT_Y, 'REV', COLOR_WHITE);
+        end
+        else begin
+            g_font^.outText(PREV_TEXT1_X, PREV_TEXT_Y, 'PREV', COLOR_DARKGRAY);
+        end;
+        { Draw NEXT in gray if on the last page, normally otherwise }
+        if g_inventory_pos_components.page <> (NUM_INVENTORY_PAGES - 1) then
+        begin
+            g_font^.outText(NEXT_TEXT1_X, NEXT_TEXT_Y, 'N', COLOR_YELLOW);
+            g_font^.outText(NEXT_TEXT2_X, NEXT_TEXT_Y, 'EXT', COLOR_WHITE);
+        end
+        else begin
+            g_font^.outText(NEXT_TEXT1_X, NEXT_TEXT_Y, 'NEXT', COLOR_DARKGRAY);
+        end;
+        g_render_components.render_inventory_ui := False;
+    end;
+
+    { The inventory items }
+    if g_render_components.render_inventory_items = True then
+    begin
+        start_index := g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE;
+        end_index := start_index + (INVENTORY_ITEMS_PER_PAGE - 1);
+        if end_index > (MAX_INVENTORY_SIZE - 1) then
+        begin
+            end_index := MAX_INVENTORY_SIZE - 1;
+        end;
+        for idx := start_index to end_index do
+        begin
+            full_name := get_item_name(g_inventory[idx].item.item_class, g_inventory[idx].item.item_idx);
+            if g_inventory[idx].item.plus_mod > 0 then
+            begin
+                Str(g_inventory[idx].item.plus_mod, plus_val);
+                full_name := full_name + ' (+' + plus_val + ')';
+            end;
+            g_font^.outText(INV_TOP_ITEM_X,
+                            INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
+                            full_name,
+                            COLOR_WHITE);
+        end;
+        g_render_components.render_inventory_items := False;
+    end;
+
+    { The active item }
+    if g_render_components.render_inventory_highlight = True then
+    begin
+        g_render_components.render_inventory_highlight := False;
+    end;
 end;
 
 procedure render_game_components;
