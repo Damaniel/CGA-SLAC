@@ -19,20 +19,20 @@ uses
     Render;
 
 procedure process_input;
-procedure process_game_state_input(keyRead: char; extendedKey: Boolean);
-procedure process_inventory_input(keyRead: char; extendedKey: Boolean);
-procedure process_title_state_input(keyRead: char; extendedKey: Boolean);
+procedure process_game_state_input(key_read: char; extended_key: Boolean);
+procedure process_inventory_input(key_read: char; extended_key: Boolean);
+procedure process_title_state_input(key_read: char; extended_key: Boolean);
 
 var
     g_exit_game: Boolean;
 
 implementation
 
-procedure process_title_state_input(keyRead: char; extendedKey: Boolean);
+procedure process_title_state_input(key_read: char; extended_key: Boolean);
 begin
 end;
 
-procedure process_game_state_input(keyRead: char; extendedKey: Boolean);
+procedure process_game_state_input(key_read: char; extended_key: Boolean);
 var
     x, y: Byte;
     sq: Byte;
@@ -40,7 +40,7 @@ var
 begin
     if g_substate = SUBSTATE_GAME_INVENTORY then
     begin
-        process_inventory_input(keyRead, extendedKey);
+        process_inventory_input(key_read, extended_key);
     end
     else begin
         x := g_dungeon.player_x;
@@ -48,7 +48,7 @@ begin
         moved := False;
 
         { Moving up }
-        if (keyRead = #72) and (extendedKey = True) then begin
+        if (key_read = #72) and (extended_key = True) then begin
             sq := g_dungeon.get_square_type(x, y-1);
             if sq <> SQUARE_WALL then begin
                 g_dungeon.set_player_pos(x, y-1);
@@ -58,7 +58,7 @@ begin
         end;
 
         { Moving down }
-        if (keyRead = #80) and (extendedKey = True) then begin
+        if (key_read = #80) and (extended_key = True) then begin
             sq := g_dungeon.get_square_type(x, y+1);
             if sq <> SQUARE_WALL then begin
                 g_dungeon.set_player_pos(x, y+1);
@@ -68,7 +68,7 @@ begin
         end;
 
         { Moving left }
-        if (keyRead = #75) and (extendedKey = True) then begin
+        if (key_read = #75) and (extended_key = True) then begin
             sq := g_dungeon.get_square_type(x-1, y);
             if sq <> SQUARE_WALL then begin
                 g_dungeon.set_player_pos(x-1, y);
@@ -78,7 +78,7 @@ begin
         end;
 
         { Moving right }
-        if (keyRead = #77) and (extendedKey = True) then begin
+        if (key_read = #77) and (extended_key = True) then begin
             sq := g_dungeon.get_square_type(x+1, y);
             if sq <> SQUARE_WALL then begin
                 g_dungeon.set_player_pos(x+1, y);
@@ -88,7 +88,7 @@ begin
         end;
 
         { Pick up item }
-        if (keyRead = 'g') and (extendedKey = False) then
+        if (key_read = 'g') and (extended_key = False) then
         begin
             g_dungeon.pick_up_from_ground(g_dungeon.player_x, g_dungeon.player_y);
             g_render_components.render_dungeon := True;
@@ -96,7 +96,7 @@ begin
         end;
 
         { Go up stairs }
-        if (keyRead = '<') and (extendedKey = False) then
+        if (key_read = '<') and (extended_key = False) then
         begin
             if (g_dungeon.player_x = g_dungeon.up_stair_x) and
                (g_dungeon.player_y = g_dungeon.up_stair_y) then
@@ -113,7 +113,7 @@ begin
         end;
 
         { Go down stairs }
-        if (keyRead = '>') and (extendedKey = False) then
+        if (key_read = '>') and (extended_key = False) then
         begin
             if (g_dungeon.player_x = g_dungeon.down_stair_x) and
                (g_dungeon.player_y = g_dungeon.down_stair_y) and
@@ -123,7 +123,15 @@ begin
             end;
         end;
 
-        if keyRead = #27 then begin
+        { Open inventory }
+        if (key_read = 'i') and (extended_key = False) then
+        begin
+            g_substate := SUBSTATE_GAME_INVENTORY;
+            adjust_inventory_render_components(SET_ALL);
+        end;
+
+        { Tell game to exit }
+        if key_read = #27 then begin
             g_exit_game := True;
         end;
 
@@ -133,36 +141,36 @@ begin
     end;
 end;
 
-procedure process_inventory_input(keyRead: Char; extendedKey: Boolean);
+procedure process_inventory_input(key_read: Char; extended_key: Boolean);
 begin
-    if keyRead = #27 then
+    if (key_read = #27) or (key_read = 'i') then
     begin
         g_substate := SUBSTATE_GAME_DEFAULT;
-        adjust_all_render_components(SET_ALL);
+        adjust_game_render_components(SET_ALL);
     end;
 end;
 
 { process_input - gets and handle keypresses }
 procedure process_input;
 var
-  keyRead: Char;
-  extendedKey: Boolean;
+  key_read: Char;
+  extended_key: Boolean;
 begin
     { If a key press (normal or extended) is detected, figure out what it is and process appropriately. }
     if keypressed then begin
-        keyRead := readkey;
-        extendedKey := False;
+        key_read := readkey;
+        extended_key := False;
 
         { Detect extended keypress. }
-        if (keyRead = #0) then begin
-            extendedKey := True;
-            keyRead := readkey;
+        if (key_read = #0) then begin
+            extended_key := True;
+            key_read := readkey;
         end;
 
         { Select what to do based on the game state }
         case g_current_state of
-            STATE_TITLE: process_title_state_input(keyRead, extendedKey);
-            STATE_GAME: process_game_state_input(keyRead, extendedKey);
+            STATE_TITLE: process_title_state_input(key_read, extended_key);
+            STATE_GAME: process_game_state_input(key_read, extended_key);
         end;
     end;
 end;

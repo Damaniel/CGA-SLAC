@@ -63,6 +63,9 @@ RenderComponentsType=record
     render_dungeon: Boolean;
     render_interface_values: Boolean;
     render_text_box: Boolean;
+    render_inventory_ui: Boolean;
+    render_inventory_items: Boolean;
+    render_inventory_highlight: Boolean;
 end;
 
 const
@@ -213,6 +216,13 @@ const
 
     { A generic 'nothing' value for enemy and item uids }
     NOTHING = -1;
+
+    { State data }
+    STATE_TITLE = 0;
+    STATE_GAME = 1;
+
+    SUBSTATE_GAME_DEFAULT = 0;
+    SUBSTATE_GAME_INVENTORY = 1;
 
     { Monster data }
     NUM_MONSTERS = 31;
@@ -403,6 +413,10 @@ const
 var
   { Render components }
   g_render_components: RenderComponentsType;
+
+  { Game state / substate }
+  g_current_state: Integer;
+  g_substate: Integer;
 
 implementation
 

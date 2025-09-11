@@ -16,17 +16,6 @@ uses
   Textlog,
   Render;
 
-const
-  STATE_TITLE = 0;
-  STATE_GAME = 1;
-
-  SUBSTATE_GAME_DEFAULT = 0;
-  SUBSTATE_GAME_INVENTORY = 1;
-
-var
-  g_current_state: Integer;
-  g_substate: Integer;
-
 procedure do_change_to_title_state;
 procedure do_change_to_game_state;
 procedure do_change_to_inventory_state;
@@ -47,7 +36,7 @@ begin
   Str(g_depth, s2);
   s := 'YOU ENTER LEVEL ' + s2 + '.';
   append_text_to_log(s);
-  adjust_all_render_components(SET_ALL);
+  adjust_game_render_components(SET_ALL);
 end;
 
 { do_change_to_title_state - does the initialization required when transitioning to STATE_TITLE }

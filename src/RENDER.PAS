@@ -21,7 +21,7 @@ uses
     Textlog;
 
 const
-    { Used by adjust_all_render_components, to either set or clear all components at once }
+    { Used by adjust_game_render_components, to either set or clear all components at once }
     CLEAR_ALL = 0;
     SET_ALL = 1;
 
@@ -168,10 +168,14 @@ var
   { Font data }
   g_font: pFontSet;
 
-procedure adjust_all_render_components(comp_val: Integer);
+procedure adjust_game_render_components(comp_val: Integer);
+procedure adjust_inventory_render_components(comp_val: Integer);
 procedure render_init;
 procedure render_cleanup;
 procedure render_components;
+procedure render_title_components;
+procedure render_game_components;
+procedure render_inventory_components;
 procedure render_dungeon_area(left: Integer; top: Integer);
 procedure render_fog_of_war(dt_x: Integer; dt_y: Integer; tile_x: Integer; tile_y: Integer);
 procedure render_text_box;
@@ -180,13 +184,13 @@ procedure render_interface_values;
 
 implementation
 
-{ adjust_all_render_components - a helper function to force all parts of the screen to be
+{ adjust_game_render_components - a helper function to force all parts of the screen to be
   (or not be) redrawn.
 
   Parameters:
     - comp_val: should they be enabled (SET_ALL) or disabled (CLEAR_ALL)?
 }
-procedure adjust_all_render_components(comp_val: Integer);
+procedure adjust_game_render_components(comp_val: Integer);
 var
     set_val: Boolean;
 begin
@@ -199,6 +203,18 @@ begin
     g_render_components.render_text_box := set_val;
 end;
 
+procedure adjust_inventory_render_components(comp_val: Integer);
+var
+    set_val: Boolean;
+begin
+    if comp_val = CLEAR_ALL then set_val := False;
+    if comp_val = SET_ALL then set_val := True;
+
+    g_render_components.render_inventory_ui := set_val;
+    g_render_components.render_inventory_items := set_val;
+    g_render_components.render_inventory_highlight := set_val;
+end;
+
 { render_init - sets up the graphics system }
 procedure render_init;
 begin
@@ -209,7 +225,7 @@ begin
   tg_init;
   tg_clear(0);
 
-  adjust_all_render_components(CLEAR_ALL);
+  adjust_game_render_components(CLEAR_ALL);
 end;
 
 { render_cleanup - shuts down the graphics system }
@@ -219,8 +235,12 @@ begin
   tg_term;
 end;
 
-{ render_components - the main render function }
-procedure render_components;
+procedure render_inventory_components;
+begin
+
+end;
+
+procedure render_game_components;
 var
     x, y: Byte;
 begin
@@ -246,6 +266,30 @@ begin
     begin
         render_text_box;
         g_render_components.render_text_box := False;
+    end;
+end;
+
+procedure render_title_components;
+begin
+
+end;
+
+{ render_components - the main render function }
+procedure render_components;
+begin
+    case g_current_state of
+        STATE_TITLE: begin
+                        render_title_components;
+                     end;
+        STATE_GAME: begin
+                        if g_substate = SUBSTATE_GAME_INVENTORY then
+                        begin
+                            render_inventory_components;
+                        end
+                        else begin
+                            render_game_components;
+                        end;
+                    end;
     end;
 end;
 
