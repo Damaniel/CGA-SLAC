@@ -127,9 +127,9 @@ var
 begin
     r := Random(100);
     { 15 % chance of a weapon, 35 % chance of an armor, 50% chance of an item }
-    if (r < 100) then item_type := SLAC_WEAPON_TYPE;
-    {if (r >= 15) and (r < 50) then item_type := SLAC_ARMOR_TYPE;
-    if (r >= 50) then item_type := SLAC_ITEM_TYPE;}
+    if (r < 15) then item_type := SLAC_WEAPON_TYPE;
+    if (r >= 15) and (r < 50) then item_type := SLAC_ARMOR_TYPE;
+    if (r >= 50) then item_type := SLAC_ITEM_TYPE;
 
     { Create the drop + quantity or plus modifier }
     case item_type of

@@ -218,11 +218,14 @@ var
     g_GameTiles: tDynamicData;
     { Font data }
     g_font: pFontSet;
+    g_tiles: array[0..DUNGEON_AREA_NUM_H_TILES-1, 0..DUNGEON_AREA_NUM_V_TILES-1] of RenderTileType;
+    g_old_tiles: array[0..DUNGEON_AREA_NUM_H_TILES-1, 0..DUNGEON_AREA_NUM_V_TILES-1] of RenderTileType;
 
 function get_full_inventory_item_name(idx: Integer) : String;
 function get_num_items_on_inventory_page : Integer;
 procedure adjust_game_render_components(comp_val: Integer);
 procedure adjust_inventory_render_components(comp_val: Integer);
+procedure clear_tiles;
 procedure render_init;
 procedure render_cleanup;
 procedure render_components;
@@ -236,6 +239,22 @@ procedure render_interface;
 procedure render_interface_values;
 
 implementation
+
+procedure clear_tiles;
+var
+    x, y: Integer;
+begin
+  for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
+  begin
+    for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
+    begin
+      { Force a tile draw by marking all of the screen tiles as different }
+      g_tiles[x][y].tile := -1;
+      g_tiles[x][y].enemy := -1;
+      g_tiles[x][y].item := -1;
+    end;
+  end;
+end;
 
 { get_num_items_on_inventory_page - determine how many items are on the currently selected
   inventory page
@@ -490,6 +509,8 @@ procedure render_dungeon_area(left: Integer; top: Integer);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
+    old_tile_x, old_tile_y: Integer;
+    item_idx: Integer;
     sq_type: Integer;
     dt_x, dt_y: Integer;
     sprite: Integer;
@@ -497,65 +518,102 @@ var
     s: SLACEnemy;
     it: SLACItem;
 begin
-    tile_y := DUNGEON_AREA_Y;
+    { Tilemap: Each square contains
+       - tile id (lower 4 bits)
+       - enemy here (5th bit)
+       - item here (6th bit))
+    }
+    { Copy new tilemap to old }
+    for y := 0 to DUNGEON_AREA_NUM_V_TILES -1 do
+    begin
+        for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
+        begin
+            g_old_tiles[x][y].tile := g_tiles[x][y].tile;
+            g_old_tiles[x][y].enemy := g_tiles[x][y].enemy;
+            g_old_tiles[x][y].item := g_tiles[x][y].item;
+        end;
+    end;
+
+    { Assemble new tilemap }
     for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
     begin
-        tile_x := DUNGEON_AREA_X;
         for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
         begin
             dt_x := left + x;
             dt_y := top + y;
-            { If in the middle spot (always occupied by the player), render the player sprite
-              instead.  This reduces the flicker from rendering him after the fact on slower
-              computers. }
-            if (x = DUNGEON_AREA_NUM_H_TILES div 2) and (y = DUNGEON_AREA_NUM_V_TILES div 2) then
+            { Out of bounds }
+            if (dt_x < 0) or (dt_x > DUNGEON_WIDTH - 1) or
+               (dt_y < 0) or (dt_y > DUNGEON_HEIGHT - 1) then
             begin
-                tg_tile7(tile_x, tile_y, SPRITE_HERO);
+                g_tiles[x][y].tile := SQUARE_VOID;
             end
-            { Otherwise, determine what to draw here }
             else begin
-                { Draw fog of war for squares outside of the dungeon area }
-                if (dt_x < 0) or ((dt_x) > DUNGEON_WIDTH - 1) or
-                    ((dt_y) < 0) or ((dt_y) > DUNGEON_HEIGHT - 1) then
+                { Hidden by fog of war }
+                if g_dungeon.get_square_seen(dt_x, dt_y) = False then
+                begin
+                    g_tiles[x][y].tile := SQUARE_VOID;
+                end
+                { Visible }
+                else begin
+                    sq_type := g_dungeon.get_square_type(dt_x, dt_y);
+                    g_tiles[x][y].tile := sq_type;
+                end;
+                { Enemy here }
+                g_tiles[x][y].enemy := g_dungeon.get_enemy(dt_x, dt_y);
+                { Item here }
+                g_tiles[x][y].item := g_dungeon.get_item(dt_x, dt_y);
+            end;
+        end;
+    end;
+
+    { For each tile, if different (different tile, or if item/enemy present), draw, otherwise skip}
+    tile_y := DUNGEON_AREA_Y;
+    for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
+    begin
+        tile_x := DUNGEON_AREA_X;
+        for x:= 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
+        begin
+            { If the tiles differ }
+            if (g_tiles[x][y].tile <> g_old_tiles[x][y].tile) or
+                    (g_tiles[x][y].enemy <> g_old_tiles[x][y].enemy) or
+                    (g_tiles[x][y].item <> g_old_tiles[x][y].item) then
+            begin
+                { If the player, draw that tile}
+                { Otherwise draw the base tile }
+                if (g_tiles[x][y].tile) = SQUARE_VOID then
                 begin
                     render_fog_of_war(x, y, tile_x, tile_y);
                 end
                 else begin
-                    { Draw fog of war if square isn't seen yet }
-                    if g_dungeon.get_square_seen(dt_x, dt_y) = False then
-                    begin
-                        render_fog_of_war(x, y, tile_x, tile_y);
-                    end
-                    else begin
-                        { Otherwise determine which dungeon square goes here and draw it }
-                        sq_type := g_dungeon.get_square_type(dt_x, dt_y);
-                        case sq_type of
-                            SQUARE_WALL: sprite := SPRITE_WALL1;
-                            SQUARE_FLOOR: sprite := SPRITE_BLANK;
-                            SQUARE_UP_STAIRS: sprite := SPRITE_USTAIR;
-                            SQUARE_DOWN_STAIRS: sprite := SPRITE_DSTAIR;
-                        end;
-                        tg_tile7(tile_x, tile_y, sprite);
-                        { If an item is here, render it }
-                        if g_dungeon.get_item(dt_x, dt_y) <> NO_ITEM then
-                        begin
-                            { Determine what item it is and draw the appropriate one }
-                            it := g_item_list[g_dungeon.get_item(dt_x, dt_y)];
-                            case it.item_class of
-                                SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[it.item_idx].tid);
-                                SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[it.item_idx].tid);
-                                SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[it.item_idx].tid);
-                            end;
-                        end;
-                        { If an enemy is here, render it }
-                        if g_dungeon.get_enemy(dt_x, dt_y) <> NO_ENEMY then
-                        begin
-                            s := g_enemy_list[g_dungeon.get_enemy(dt_x, dt_y)];
-                            enemy := s.enemy_idx;
-                            tg_tile7(tile_x, tile_y, g_monster_data[enemy].tid);
-                        end;
+                    case (g_tiles[x][y].tile) of
+                        SQUARE_WALL: sprite := SPRITE_WALL1;
+                        SQUARE_FLOOR: sprite := SPRITE_BLANK;
+                        SQUARE_UP_STAIRS: sprite := SPRITE_USTAIR;
+                        SQUARE_DOWN_STAIRS: sprite := SPRITE_DSTAIR;
                     end;
+                    tg_tile7(tile_x, tile_y, sprite);
                 end;
+            end;
+
+            if (g_tiles[x][y].tile <> SQUARE_VOID) and (g_tiles[x][y].enemy <> NO_ENEMY) then
+            begin
+                tg_tile7(tile_x, tile_y, g_monster_data[g_enemy_list[g_tiles[x][y].enemy].enemy_idx].tid);
+            end;
+
+            if (g_tiles[x][y].tile <> SQUARE_VOID) and (g_tiles[x][y].item <> NO_ITEM) then
+            begin
+                item_idx := g_item_list[g_tiles[x][y].item].item_idx;
+                case g_item_list[g_tiles[x][y].item].item_class of
+                    SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[item_idx].tid);
+                    SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[item_idx].tid);
+                    SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[item_idx].tid);
+                end;
+            end;
+
+            { Always draw the player}
+            if (x = DUNGEON_AREA_NUM_H_TILES div 2) and (y = DUNGEON_AREA_NUM_V_TILES div 2) then
+            begin
+                tg_tile7(tile_x, tile_y, SPRITE_HERO);
             end;
             tile_x := tile_x + DUNGEON_AREA_TILE_WIDTH;
         end;

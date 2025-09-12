@@ -149,6 +149,7 @@ begin
     if (key_read = #27) or (key_read = 'i') then
     begin
         g_substate := SUBSTATE_GAME_DEFAULT;
+        clear_tiles;
         adjust_game_render_components(SET_ALL);
     end;
 

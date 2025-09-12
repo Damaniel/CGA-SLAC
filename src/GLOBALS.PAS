@@ -76,6 +76,12 @@ InventoryRenderType=record
     page: Shortint;
 end;
 
+RenderTileType=record
+    tile: Shortint;
+    enemy: Shortint;
+    item: Shortint;
+end;
+
 const
     { Maximum dungeon depth }
     NUM_FLOORS =      30;

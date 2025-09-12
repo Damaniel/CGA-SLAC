@@ -29,6 +29,7 @@ procedure create_SLAC_dungeon(floor: Integer; direction: Integer);
 var
    s, s2: String;
 begin
+  clear_tiles;
   g_dungeon.Init;
   g_depth := floor;
   g_dungeon.generate(@g_generator, direction);
