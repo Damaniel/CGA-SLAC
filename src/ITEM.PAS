@@ -49,6 +49,7 @@ g_item_list: array[0..MAX_DUNGEON_ITEMS-1] of SLACItem;
 
 { The player's inventory }
 g_inventory: array[0..MAX_INVENTORY_SIZE-1] of SLACInventoryItem;
+g_inventory_count : Integer;
 
 function get_sprite_index(var i: SLACItem): Integer;
 function get_first_available_item_list_slot : Integer;
@@ -140,6 +141,7 @@ begin
     begin
         copy_item_to_item(it, g_inventory[idx].item);
         g_inventory[idx].item_here := True;
+        g_inventory_count := g_inventory_count + 1;
     end
     else begin
         Writeln('Warning: item index out of range');
@@ -169,6 +171,7 @@ begin
     begin
         clear_item(g_inventory[slot].item);
         g_inventory[slot].item_here := False;
+        g_inventory_count := g_inventory_count - 1;
     end;
 end;
 
@@ -190,6 +193,7 @@ begin
     begin
         delete_inventory_item_at(idx);
     end;
+    g_inventory_count := 0;
 end;
 
 function is_item_list_slot_empty(slot: Integer) : Boolean;

@@ -142,6 +142,9 @@ begin
 end;
 
 procedure process_inventory_input(key_read: Char; extended_key: Boolean);
+var
+    index: Integer;
+    num_items_on_this_page: Integer;
 begin
     if (key_read = #27) or (key_read = 'i') then
     begin
@@ -149,20 +152,47 @@ begin
         adjust_game_render_components(SET_ALL);
     end;
 
+    { Moving down }
+    if (key_read = #80) and (extended_key = True) then begin
+        if g_inventory_count > 0 then
+        begin
+            num_items_on_this_page := get_num_items_on_inventory_page;
+            g_inventory_pos_components.index := (g_inventory_pos_components.index + 1) mod num_items_on_this_page;
+            adjust_inventory_render_components(SET_ALL);
+        end;
+    end;
+
+    { Moving up }
+    if (key_read = #72) and (extended_key = True) then begin
+        if g_inventory_count > 0 then
+        begin
+            num_items_on_this_page := get_num_items_on_inventory_page;
+            g_inventory_pos_components.index := g_inventory_pos_components.index - 1;
+            if g_inventory_pos_components.index < 0 then
+            begin
+                g_inventory_pos_components.index := num_items_on_this_page - 1;
+            end;
+            adjust_inventory_render_components(SET_ALL);
+        end;
+    end;
+
     if (key_read = 'n') and (extended_key = False) then
     begin
-        if g_inventory_pos_components.page < (NUM_INVENTORY_PAGES - 1) then
+        if (g_inventory_pos_components.page < (NUM_INVENTORY_PAGES - 1)) and
+           (g_inventory_count > (g_inventory_pos_components.page + 1) * INVENTORY_ITEMS_PER_PAGE) then
         begin
             g_inventory_pos_components.page := g_inventory_pos_components.page + 1;
+            g_inventory_pos_components.index := 0;
             adjust_inventory_render_components(SET_ALL);
         end;
     end;
 
     if (key_read = 'p') and (extended_key = False) then
     begin
-        if g_inventory_pos_components.page > 0 then
+        if (g_inventory_pos_components.page > 0) then
         begin
             g_inventory_pos_components.page := g_inventory_pos_components.page - 1;
+            g_inventory_pos_components.index := 0;
             adjust_inventory_render_components(SET_ALL);
         end;
     end;

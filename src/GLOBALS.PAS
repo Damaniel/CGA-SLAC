@@ -71,8 +71,8 @@ end;
 
 { Items needed to determine what portion of the inventory to render }
 InventoryRenderType=record
-    index: Byte;
-    page: Byte;
+    index: Shortint;
+    page: Shortint;
 end;
 
 const

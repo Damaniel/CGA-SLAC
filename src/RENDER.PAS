@@ -33,6 +33,7 @@ const
     COLOR_RED = 4;
     COLOR_MAGENTA = 5;
     COLOR_DARKGRAY = 8;
+    COLOR_LIGHTBLUE = 9;
     COLOR_YELLOW = 14;
     COLOR_WHITE = 15;
 
@@ -218,6 +219,8 @@ var
     { Font data }
     g_font: pFontSet;
 
+function get_full_inventory_item_name(idx: Integer) : String;
+function get_num_items_on_inventory_page : Integer;
 procedure adjust_game_render_components(comp_val: Integer);
 procedure adjust_inventory_render_components(comp_val: Integer);
 procedure render_init;
@@ -233,6 +236,18 @@ procedure render_interface;
 procedure render_interface_values;
 
 implementation
+
+function get_num_items_on_inventory_page : Integer;
+begin
+    { Determine whether we're on a page with 8 items, or one with fewer }
+    if (g_inventory_pos_components.page < (g_inventory_count div INVENTORY_ITEMS_PER_PAGE)) then
+    begin
+        get_num_items_on_inventory_page := INVENTORY_ITEMS_PER_PAGE;
+    end
+    else begin
+        get_num_items_on_inventory_page := g_inventory_count mod INVENTORY_ITEMS_PER_PAGE;
+    end;
+end;
 
 { adjust_game_render_components - a helper function to force all parts of the screen to be
   (or not be) redrawn.
@@ -285,6 +300,17 @@ begin
   tg_term;
 end;
 
+function page_and_offset_to_index(page: Integer; offset: Integer) : Integer;
+begin
+    page_and_offset_to_index := page * INVENTORY_ITEMS_PER_PAGE + offset;
+end;
+
+procedure index_to_page_and_offset(index: Integer; var page: Integer; var offset: Integer);
+begin
+    page := index div INVENTORY_ITEMS_PER_PAGE;
+    offset := index mod INVENTORY_ITEMS_PER_PAGE;
+end;
+
 procedure render_inventory_components;
 var
     start_index, end_index: Integer;
@@ -321,8 +347,8 @@ begin
         else begin
             g_font^.outText(PREV_TEXT1_X, PREV_TEXT_Y, 'PREV', COLOR_DARKGRAY);
         end;
-        { Draw NEXT in gray if on the last page, normally otherwise }
-        if g_inventory_pos_components.page <> (NUM_INVENTORY_PAGES - 1) then
+        { Draw NEXT in gray if there isn't a next page, normally otherwise }
+        if  (g_inventory_count > (g_inventory_pos_components.page + 1) * INVENTORY_ITEMS_PER_PAGE) then
         begin
             g_font^.outText(NEXT_TEXT1_X, NEXT_TEXT_Y, 'N', COLOR_YELLOW);
             g_font^.outText(NEXT_TEXT2_X, NEXT_TEXT_Y, 'EXT', COLOR_WHITE);
@@ -336,6 +362,7 @@ begin
     { The inventory items }
     if g_render_components.render_inventory_items = True then
     begin
+        { Get the items that make up the start and end of the list for the current page}
         start_index := g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE;
         end_index := start_index + (INVENTORY_ITEMS_PER_PAGE - 1);
         if end_index > (MAX_INVENTORY_SIZE - 1) then
@@ -344,25 +371,50 @@ begin
         end;
         for idx := start_index to end_index do
         begin
-            full_name := get_item_name(g_inventory[idx].item.item_class, g_inventory[idx].item.item_idx);
-            if g_inventory[idx].item.plus_mod > 0 then
+            { Get the item name }
+            full_name := get_full_inventory_item_name(idx);
+            { Draw the item }
+            if (g_render_components.render_inventory_highlight = True) and
+               (g_inventory_pos_components.index = idx - start_index) then
             begin
-                Str(g_inventory[idx].item.plus_mod, plus_val);
-                full_name := full_name + ' (+' + plus_val + ')';
-            end;
-            g_font^.outText(INV_TOP_ITEM_X,
-                            INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
-                            full_name,
-                            COLOR_WHITE);
+                if g_inventory_count <> 0 then
+                begin
+                    tg_bar(INV_TOP_HI_X1, INV_TOP_HI_Y1 + (g_inventory_pos_components.index * INV_HI_OFFSET),
+                           INV_TOP_HI_X2, INV_TOP_HI_Y2 + (g_inventory_pos_components.index * INV_HI_OFFSET),
+                           COLOR_LIGHTBLUE);
+                    g_font^.outText(INV_TOP_ITEM_X,
+                                    INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
+                                    full_name,
+                                    COLOR_YELLOW);
+                    g_render_components.render_inventory_highlight := False;
+                end;
+            end
+            else begin
+                g_font^.outText(INV_TOP_ITEM_X,
+                                INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
+                                full_name,
+                                COLOR_WHITE);
+                end;
         end;
         g_render_components.render_inventory_items := False;
     end;
 
-    { The active item }
-    if g_render_components.render_inventory_highlight = True then
+end;
+
+function get_full_inventory_item_name(idx: Integer) : String;
+var
+    full_name: String;
+    plus_val: String;
+begin
+    { Get the name and plus modifier, if any }
+    full_name := get_item_name(g_inventory[idx].item.item_class, g_inventory[idx].item.item_idx);
+    if g_inventory[idx].item.plus_mod > 0 then
     begin
-        g_render_components.render_inventory_highlight := False;
+        {Add the + modifier to the item if it has a plus_mod value greater than 0 }
+        Str(g_inventory[idx].item.plus_mod, plus_val);
+        full_name := full_name + ' (+' + plus_val + ')';
     end;
+    get_full_inventory_item_name := full_name;
 end;
 
 procedure render_game_components;
