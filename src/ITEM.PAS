@@ -194,6 +194,9 @@ begin
         delete_inventory_item_at(idx);
     end;
     g_inventory_count := 0;
+    g_inventory_pos_components.index := 0;
+    g_inventory_pos_components.old_index := 0;
+    g_inventory_pos_components.page := 0;
 end;
 
 function is_item_list_slot_empty(slot: Integer) : Boolean;

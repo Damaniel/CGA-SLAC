@@ -237,6 +237,12 @@ procedure render_interface_values;
 
 implementation
 
+{ get_num_items_on_inventory_page - determine how many items are on the currently selected
+  inventory page
+
+  Returns:
+    The number of items on the page
+}
 function get_num_items_on_inventory_page : Integer;
 begin
     { Determine whether we're on a page with 8 items, or one with fewer }
@@ -300,23 +306,14 @@ begin
   tg_term;
 end;
 
-function page_and_offset_to_index(page: Integer; offset: Integer) : Integer;
-begin
-    page_and_offset_to_index := page * INVENTORY_ITEMS_PER_PAGE + offset;
-end;
-
-procedure index_to_page_and_offset(index: Integer; var page: Integer; var offset: Integer);
-begin
-    page := index div INVENTORY_ITEMS_PER_PAGE;
-    offset := index mod INVENTORY_ITEMS_PER_PAGE;
-end;
-
 procedure render_inventory_components;
 var
     start_index, end_index: Integer;
+    old_full_name: String;
     full_name: String;
     plus_val: String;
     idx: Integer;
+    y1, y2: Integer;
 begin
     { The background }
     if g_render_components.render_inventory_ui = True then
@@ -365,38 +362,45 @@ begin
         { Get the items that make up the start and end of the list for the current page}
         start_index := g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE;
         end_index := start_index + (INVENTORY_ITEMS_PER_PAGE - 1);
-        if end_index > (MAX_INVENTORY_SIZE - 1) then
+        for idx := 0 to INVENTORY_ITEMS_PER_PAGE - 1 do
         begin
-            end_index := MAX_INVENTORY_SIZE - 1;
-        end;
-        for idx := start_index to end_index do
-        begin
-            { Get the item name }
-            full_name := get_full_inventory_item_name(idx);
-            { Draw the item }
-            if (g_render_components.render_inventory_highlight = True) and
-               (g_inventory_pos_components.index = idx - start_index) then
+            if (idx + start_index) < (MAX_INVENTORY_SIZE - 1) then
             begin
-                if g_inventory_count <> 0 then
-                begin
-                    tg_bar(INV_TOP_HI_X1, INV_TOP_HI_Y1 + (g_inventory_pos_components.index * INV_HI_OFFSET),
-                           INV_TOP_HI_X2, INV_TOP_HI_Y2 + (g_inventory_pos_components.index * INV_HI_OFFSET),
-                           COLOR_LIGHTBLUE);
-                    g_font^.outText(INV_TOP_ITEM_X,
-                                    INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
-                                    full_name,
-                                    COLOR_YELLOW);
-                    g_render_components.render_inventory_highlight := False;
-                end;
-            end
-            else begin
+                full_name := get_full_inventory_item_name(idx + start_index);
                 g_font^.outText(INV_TOP_ITEM_X,
-                                INV_TOP_ITEM_Y + ((idx - start_index ) * INV_ITEM_OFFSET),
+                                INV_TOP_ITEM_Y + (idx * INV_ITEM_OFFSET),
                                 full_name,
                                 COLOR_WHITE);
-                end;
+            end;
         end;
         g_render_components.render_inventory_items := False;
+    end;
+
+    { Redraw the highlighted area.  Skip if there are zero items in the inventory }
+    if (g_render_components.render_inventory_highlight = True) and (g_inventory_count > 0) then
+    begin
+        start_index := g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE;
+        old_full_name := get_full_inventory_item_name(start_index + g_inventory_pos_components.old_index);
+        full_name := get_full_inventory_item_name(start_index + g_inventory_pos_components.index);
+
+        { Clear the border and redraw the item text at the old location }
+        y1 := INV_TOP_HI_Y1 + INV_HI_OFFSET * g_inventory_pos_components.old_index;
+        y2 := y1 + INV_HI_OFFSET - 1;
+        tg_bar(INV_TOP_HI_X1, y1, INV_TOP_HI_X2, y2, COLOR_BLUE);
+        g_font^.outText(INV_TOP_ITEM_X,
+                        INV_TOP_ITEM_Y + (g_inventory_pos_components.old_index * INV_ITEM_OFFSET),
+                        old_full_name,
+                        COLOR_WHITE);
+
+        { Draw the new border and redraw the item text at the new location }
+        y1 := INV_TOP_HI_Y1 + INV_HI_OFFSET * g_inventory_pos_components.index;
+        y2 := y1 + INV_HI_OFFSET - 1;
+        tg_bar(INV_TOP_HI_X1, y1, INV_TOP_HI_X2, y2, COLOR_LIGHTBLUE);
+        g_font^.outText(INV_TOP_ITEM_X,
+                        INV_TOP_ITEM_Y + (g_inventory_pos_components.index * INV_ITEM_OFFSET),
+                        full_name,
+                        COLOR_YELLOW);
+        g_render_components.render_inventory_highlight := False;
     end;
 
 end;

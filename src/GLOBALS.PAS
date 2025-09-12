@@ -72,6 +72,7 @@ end;
 { Items needed to determine what portion of the inventory to render }
 InventoryRenderType=record
     index: Shortint;
+    old_index: Shortint;
     page: Shortint;
 end;
 

@@ -157,8 +157,9 @@ begin
         if g_inventory_count > 0 then
         begin
             num_items_on_this_page := get_num_items_on_inventory_page;
+            g_inventory_pos_components.old_index := g_inventory_pos_components.index;
             g_inventory_pos_components.index := (g_inventory_pos_components.index + 1) mod num_items_on_this_page;
-            adjust_inventory_render_components(SET_ALL);
+            g_render_components.render_inventory_highlight := True;
         end;
     end;
 
@@ -167,12 +168,13 @@ begin
         if g_inventory_count > 0 then
         begin
             num_items_on_this_page := get_num_items_on_inventory_page;
+            g_inventory_pos_components.old_index := g_inventory_pos_components.index;
             g_inventory_pos_components.index := g_inventory_pos_components.index - 1;
             if g_inventory_pos_components.index < 0 then
             begin
                 g_inventory_pos_components.index := num_items_on_this_page - 1;
             end;
-            adjust_inventory_render_components(SET_ALL);
+            g_render_components.render_inventory_highlight := True;
         end;
     end;
 
@@ -183,6 +185,7 @@ begin
         begin
             g_inventory_pos_components.page := g_inventory_pos_components.page + 1;
             g_inventory_pos_components.index := 0;
+            g_inventory_pos_components.old_index := 0;
             adjust_inventory_render_components(SET_ALL);
         end;
     end;
@@ -193,6 +196,7 @@ begin
         begin
             g_inventory_pos_components.page := g_inventory_pos_components.page - 1;
             g_inventory_pos_components.index := 0;
+            g_inventory_pos_components.old_index := 0;
             adjust_inventory_render_components(SET_ALL);
         end;
     end;
