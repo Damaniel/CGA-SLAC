@@ -509,62 +509,11 @@ procedure render_dungeon_area(left: Integer; top: Integer);
 var
     x, y: Integer;
     tile_x, tile_y: Integer;
-    old_tile_x, old_tile_y: Integer;
-    item_idx: Integer;
     sq_type: Integer;
+    item_idx: Integer;
     dt_x, dt_y: Integer;
     sprite: Integer;
-    enemy, item: Integer;
-    s: SLACEnemy;
-    it: SLACItem;
 begin
-    { Tilemap: Each square contains
-       - tile id (lower 4 bits)
-       - enemy here (5th bit)
-       - item here (6th bit))
-    }
-    { Copy new tilemap to old }
-    for y := 0 to DUNGEON_AREA_NUM_V_TILES -1 do
-    begin
-        for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
-        begin
-            g_old_tiles[x][y].tile := g_tiles[x][y].tile;
-            g_old_tiles[x][y].enemy := g_tiles[x][y].enemy;
-            g_old_tiles[x][y].item := g_tiles[x][y].item;
-        end;
-    end;
-
-    { Assemble new tilemap }
-    for y := 0 to DUNGEON_AREA_NUM_V_TILES - 1 do
-    begin
-        for x := 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
-        begin
-            dt_x := left + x;
-            dt_y := top + y;
-            { Out of bounds }
-            if (dt_x < 0) or (dt_x > DUNGEON_WIDTH - 1) or
-               (dt_y < 0) or (dt_y > DUNGEON_HEIGHT - 1) then
-            begin
-                g_tiles[x][y].tile := SQUARE_VOID;
-            end
-            else begin
-                { Hidden by fog of war }
-                if g_dungeon.get_square_seen(dt_x, dt_y) = False then
-                begin
-                    g_tiles[x][y].tile := SQUARE_VOID;
-                end
-                { Visible }
-                else begin
-                    sq_type := g_dungeon.get_square_type(dt_x, dt_y);
-                    g_tiles[x][y].tile := sq_type;
-                end;
-                { Enemy here }
-                g_tiles[x][y].enemy := g_dungeon.get_enemy(dt_x, dt_y);
-                { Item here }
-                g_tiles[x][y].item := g_dungeon.get_item(dt_x, dt_y);
-            end;
-        end;
-    end;
 
     { For each tile, if different (different tile, or if item/enemy present), draw, otherwise skip}
     tile_y := DUNGEON_AREA_Y;
@@ -573,13 +522,46 @@ begin
         tile_x := DUNGEON_AREA_X;
         for x:= 0 to DUNGEON_AREA_NUM_H_TILES - 1 do
         begin
-            { If the tiles differ }
+            { --- Assemble the tilemap for this square --- }
+            { For the old square, Set the tile position to the current one}
+            g_old_tiles[x][y].tile := g_tiles[x][y].tile;
+            g_old_tiles[x][y].enemy := g_tiles[x][y].enemy;
+            g_old_tiles[x][y].item := g_tiles[x][y].item;
+            dt_x := left + x;
+            dt_y := top + y;
+
+            { For the current square }
+            { If out of bounds, mark as fog of war }
+            if (dt_x < 0) or (dt_x > DUNGEON_WIDTH - 1) or
+               (dt_y < 0) or (dt_y > DUNGEON_HEIGHT - 1) then
+            begin
+                g_tiles[x][y].tile := SQUARE_VOID;
+            end
+            else begin
+                { If hidden, mark as fog of war}
+                if g_dungeon.get_square_seen(dt_x, dt_y) = False then
+                begin
+                    g_tiles[x][y].tile := SQUARE_VOID;
+                end
+                { If visible, get the square type }
+                else begin
+                    sq_type := g_dungeon.get_square_type(dt_x, dt_y);
+                    g_tiles[x][y].tile := sq_type;
+                end;
+                { If an enemy is here, get it }
+                g_tiles[x][y].enemy := g_dungeon.get_enemy(dt_x, dt_y);
+                { If an item is here, get it }
+                g_tiles[x][y].item := g_dungeon.get_item(dt_x, dt_y);
+            end;
+
+            { Now compare the old and the new.  If the tiles differ somehow
+             (either tile index itself, or item/enemy presence), draw the updated tile.
+             This has the added effect of erasing the previous location of any enemy
+             or item. }
             if (g_tiles[x][y].tile <> g_old_tiles[x][y].tile) or
                     (g_tiles[x][y].enemy <> g_old_tiles[x][y].enemy) or
                     (g_tiles[x][y].item <> g_old_tiles[x][y].item) then
             begin
-                { If the player, draw that tile}
-                { Otherwise draw the base tile }
                 if (g_tiles[x][y].tile) = SQUARE_VOID then
                 begin
                     render_fog_of_war(x, y, tile_x, tile_y);
@@ -595,18 +577,22 @@ begin
                 end;
             end;
 
-            if (g_tiles[x][y].tile <> SQUARE_VOID) and (g_tiles[x][y].enemy <> NO_ENEMY) then
+            { If the square is visible and now holds an enemy or item, draw it }
+            if (g_tiles[x][y].tile <> SQUARE_VOID) then
             begin
-                tg_tile7(tile_x, tile_y, g_monster_data[g_enemy_list[g_tiles[x][y].enemy].enemy_idx].tid);
-            end;
-
-            if (g_tiles[x][y].tile <> SQUARE_VOID) and (g_tiles[x][y].item <> NO_ITEM) then
-            begin
-                item_idx := g_item_list[g_tiles[x][y].item].item_idx;
-                case g_item_list[g_tiles[x][y].item].item_class of
-                    SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[item_idx].tid);
-                    SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[item_idx].tid);
-                    SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[item_idx].tid);
+                { Item first since it has lower priority than enemies }
+                if (g_tiles[x][y].item <> NO_ITEM) then
+                begin
+                    item_idx := g_item_list[g_tiles[x][y].item].item_idx;
+                    case g_item_list[g_tiles[x][y].item].item_class of
+                        SLAC_WEAPON_TYPE: tg_tile7(tile_x, tile_y, g_weapon_data[item_idx].tid);
+                        SLAC_ARMOR_TYPE:  tg_tile7(tile_x, tile_y, g_armor_data[item_idx].tid);
+                        SLAC_ITEM_TYPE:   tg_tile7(tile_x, tile_y, g_item_data[item_idx].tid);
+                    end;
+                end;
+                if (g_tiles[x][y].enemy <> NO_ENEMY) then
+                begin
+                    tg_tile7(tile_x, tile_y, g_monster_data[g_enemy_list[g_tiles[x][y].enemy].enemy_idx].tid);
                 end;
             end;
 
