@@ -303,6 +303,8 @@ begin
     g_render_components.render_inventory_ui := set_val;
     g_render_components.render_inventory_items := set_val;
     g_render_components.render_inventory_highlight := set_val;
+    g_render_components.render_inventory_equip := set_val;
+
 end;
 
 { render_init - sets up the graphics system }
@@ -385,20 +387,33 @@ begin
         begin
             if (idx + start_index) < (MAX_INVENTORY_SIZE - 1) then
             begin
-                tg_bar(INV_EQUIP_X, INV_TOP_EQUIP_Y + (idx * INV_ITEM_OFFSET), INV_EQUIP_X + 6,
-                       INV_TOP_EQUIP_Y + ((idx + 1) * INV_ITEM_OFFSET), COLOR_BLUE);
                 full_name := get_full_inventory_item_name(idx + start_index);
                 g_font^.outText(INV_TOP_ITEM_X,
                                 INV_TOP_ITEM_Y + (idx * INV_ITEM_OFFSET),
                                 full_name,
                                 COLOR_WHITE);
+            end;
+        end;
+        g_render_components.render_inventory_items := False;
+    end;
+
+    if g_render_components.render_inventory_equip = True then
+    begin
+        start_index := g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE;
+        end_index := start_index + (INVENTORY_ITEMS_PER_PAGE - 1);
+        for idx := 0 to INVENTORY_ITEMS_PER_PAGE - 1 do
+        begin
+            if (idx + start_index) < (MAX_INVENTORY_SIZE - 1) then
+            begin
+                tg_bar(INV_EQUIP_X, INV_TOP_EQUIP_Y + (idx * INV_ITEM_OFFSET), INV_EQUIP_X + 4,
+                       INV_TOP_EQUIP_Y + ((idx + 1) * INV_ITEM_OFFSET), COLOR_BLUE);
                 if g_inventory[idx + start_index].item.equipped = True then
                 begin
                     g_font^.outText(INV_EQUIP_X, INV_TOP_EQUIP_Y + (idx * INV_ITEM_OFFSET), 'E', COLOR_GREEN);
                 end;
             end;
         end;
-        g_render_components.render_inventory_items := False;
+        g_render_components.render_inventory_equip := False;
     end;
 
     { Redraw the highlighted area.  Skip if there are zero items in the inventory }

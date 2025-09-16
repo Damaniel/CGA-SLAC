@@ -182,6 +182,7 @@ begin
         end;
     end;
 
+    { Equip toggle }
     if (key_read = 'e') and (extended_key = False) then
     begin
         { Toggle between equipped and unequipped if the item is gear }
@@ -199,8 +200,7 @@ begin
         else begin
             g_player.equip(index, was_equipped);
         end;
-        g_render_components.render_inventory_items := True;
-        g_render_components.render_inventory_highlight := True;
+        g_render_components.render_inventory_equip := True;
     end;
 
     if (key_read = 'n') and (extended_key = False) then

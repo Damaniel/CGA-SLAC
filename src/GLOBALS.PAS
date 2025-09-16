@@ -67,6 +67,7 @@ RenderComponentsType=record
     render_inventory_ui: Boolean;
     render_inventory_items: Boolean;
     render_inventory_highlight: Boolean;
+    render_inventory_equip: Boolean;
 end;
 
 { Items needed to determine what portion of the inventory to render }
