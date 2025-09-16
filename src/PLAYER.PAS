@@ -37,6 +37,7 @@ SLACPlayer=object
     procedure Init;
     procedure equip(inv_index: Integer; var was_equipped: Boolean);
     procedure unequip(equip_index: Integer; var was_removed: Boolean);
+    procedure destroy(inv_index: Integer; var was_destroyed: Boolean; var value: Integer);
     procedure recalculate_stats;
 end;
 
@@ -156,6 +157,61 @@ begin
   recalculate_stats;
 end;
 
+procedure SLACPlayer.destroy(inv_index: Integer; var was_destroyed: Boolean; var value: Integer);
+var
+  idx: Integer;
+  it: SLACItem;
+  rarity: Integer;
+begin
+  { Determine if an item is present and is not the Orb of Power}
+  it := g_inventory[inv_index].item;
+
+  if (it.item_class = SLAC_NO_TYPE) or (it.equipped = True) then
+  begin
+    was_destroyed := False;
+  end
+  else begin
+    { If so, add money to the player based on the rarity and plus value of the item }
+    case it.item_class of
+      SLAC_WEAPON_TYPE: value := g_weapon_data[it.item_idx].base_value;
+      SLAC_ARMOR_TYPE: value := g_armor_data[it.item_idx].base_value;
+      SLAC_ITEM_TYPE: value := g_item_data[it.item_idx].base_value;
+    else
+      value := 1;
+    end;
+
+    value := Random(value) + value;
+    if it.plus_mod > 0 then
+    begin
+      value := value + ((Random(value) + value) * it.plus_mod);
+    end;
+    money := money + value;
+
+    { For each equipment item
+       - If the piece of equipment is at an index higher than the deleted item (i.e. it will
+         be moved), adjust the index of the equipment slot down by 1
+    }
+    for idx := 0 to NUM_EQUIP_SLOTS - 1 do
+    begin
+      if equipment[idx] > inv_index then
+      begin
+        equipment[idx] := equipment[idx] - 1;
+      end;
+    end;
+
+    { For each item past the deleted item, move the next one up a space }
+    for idx := inv_index + 1 to MAX_INVENTORY_SIZE - 1 do
+    begin
+      copy_item_to_item(g_inventory[idx].item, g_inventory[idx - 1].item);
+      g_inventory[idx - 1].item_here := g_inventory[idx].item_here;
+    end;
+
+    { Clear the item at the end }
+    delete_inventory_item_at(MAX_INVENTORY_SIZE - 1);
+    was_destroyed := True;
+  end;
+end;
+
 { recalculate_stats - adds up all of the stat adjustments provided by the player's level and gear
 
   This procedure is used after equipping/unequipping items, using items that modify stats,
@@ -199,7 +255,9 @@ begin
       atk := atk + g_armor_data[it.item_idx].atk;
       luck := luck + g_armor_data[it.item_idx].luck;
 
-      { For rings, apply the plus mod to all possible stats.  Mods with zero value on
+      { If the armor has a plus mod, then add 20% of the base defense for each + on
+        the armor (adding between 20 and 100% additional defense) }
+      { Note: for rings, apply the plus mod to all possible stats.  Mods with zero value on
         a stat will also have zero value in the +x form.  Note that the formula used
         to calculate the boost for rings is different than for other types - a +1 mod
         on other armors or weapons will add at least 1 DEF or ATK to the player's stats,

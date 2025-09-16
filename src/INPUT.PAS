@@ -170,9 +170,11 @@ procedure process_inventory_input(key_read: Char; extended_key: Boolean);
 var
     index: Integer;
     i: Integer;
+    value: Integer;
     num_items_on_this_page: Integer;
     was_equipped: Boolean;
-
+    was_destroyed: Boolean;
+    s: String;
 begin
     if (key_read = #27) or (key_read = 'i') then
     begin
@@ -226,6 +228,24 @@ begin
             g_player.equip(index, was_equipped);
         end;
         g_render_components.render_inventory_equip := True;
+    end;
+
+    if (key_read = 'd') and (extended_key = False) then
+    begin
+        index :=  (g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE ) + g_inventory_pos_components.index;
+        if is_inventory_slot_empty(index) = False then
+        begin
+            g_player.destroy(index, was_destroyed, value);
+            if was_destroyed = True then
+            begin
+                Str(value, s);
+                append_text_to_log('DESTROYED FOR ' + s + ' GOLD.');
+                adjust_inventory_render_components(SET_ALL);
+            end
+            else begin
+                append_text_to_log('* COULDN''T DELETE THAT! *');
+            end;
+        end;
     end;
 
     if (key_read = 'n') and (extended_key = False) then

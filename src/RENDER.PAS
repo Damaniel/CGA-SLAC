@@ -363,7 +363,7 @@ begin
         g_font^.outText(EQUIP_TEXT1_X, EQUIP_TEXT_Y, 'E', COLOR_YELLOW);
         g_font^.outText(EQUIP_TEXT2_X, EQUIP_TEXT_Y, 'QUIP', COLOR_WHITE);
         g_font^.outText(DROP_TEXT1_X, DROP_TEXT_Y, 'D', COLOR_YELLOW);
-        g_font^.outText(DROP_TEXT2_X, DROP_TEXT_Y, 'ROP', COLOR_WHITE);
+        g_font^.outText(DROP_TEXT2_X, DROP_TEXT_Y, 'EST', COLOR_WHITE);
         g_font^.outText(USE_TEXT1_X, USE_TEXT_Y, 'U', COLOR_YELLOW);
         g_font^.outText(USE_TEXT2_X, USE_TEXT_Y, 'SE', COLOR_WHITE);
         { Draw PREV in gray if on the first page, normally otherwise }
@@ -458,6 +458,13 @@ begin
     begin
         render_interface_values;
         g_render_components.render_interface_values := False;
+    end;
+
+    { If the text log is updates as part of the inventory update, make sure it's updated }
+    if g_render_components.render_text_box = True then
+    begin
+        render_text_box;
+        g_render_components.render_text_box := False;
     end;
 end;
 
