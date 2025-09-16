@@ -466,6 +466,7 @@ begin
         render_text_box;
         g_render_components.render_text_box := False;
     end;
+
 end;
 
 { get_full_inventory_item_name - get the full item name (including any + value)

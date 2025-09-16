@@ -241,6 +241,7 @@ begin
                 Str(value, s);
                 append_text_to_log('DESTROYED FOR ' + s + ' GOLD.');
                 adjust_inventory_render_components(SET_ALL);
+                g_render_components.render_interface_values := True;
             end
             else begin
                 append_text_to_log('* COULDN''T DELETE THAT! *');
