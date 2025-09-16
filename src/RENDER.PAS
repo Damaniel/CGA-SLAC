@@ -240,6 +240,9 @@ procedure render_interface_values;
 
 implementation
 
+{ clear_tiles - forces a redraw of the game tiles by marking them all as different from
+                their current state
+}
 procedure clear_tiles;
 var
     x, y: Integer;
@@ -293,6 +296,12 @@ begin
     g_render_components.render_text_box := set_val;
 end;
 
+{ adjust_inventory_render_components - a helper function to force all parts of the inventory
+  screen to be (or not be) redrawn.
+
+  Parameters:
+    - comp_val: should they be enabled (SET_ALL) or disabled (CLEAR_ALL)?
+}
 procedure adjust_inventory_render_components(comp_val: Integer);
 var
     set_val: Boolean;
@@ -327,6 +336,7 @@ begin
   tg_term;
 end;
 
+{ render_inventory_components - draws the inventory screen }
 procedure render_inventory_components;
 var
     start_index, end_index: Integer;
@@ -451,6 +461,14 @@ begin
     end;
 end;
 
+{ get_full_inventory_item_name - get the full item name (including any + value)
+
+  Parameters
+    idx - the slot in the player's inventory to get the name of
+
+  Returns
+    the name of the item
+}
 function get_full_inventory_item_name(idx: Integer) : String;
 var
     full_name: String;
@@ -467,6 +485,7 @@ begin
     get_full_inventory_item_name := full_name;
 end;
 
+{ render_game_components - renders the different parts of the main game screen }
 procedure render_game_components;
 var
     x, y: Byte;
@@ -496,6 +515,7 @@ begin
     end;
 end;
 
+{ render_title_components - renders the different parts of the title screen }
 procedure render_title_components;
 begin
 

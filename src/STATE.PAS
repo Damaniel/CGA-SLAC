@@ -25,6 +25,13 @@ procedure create_SLAC_dungeon(floor: Integer; direction: Integer);
 implementation
 
 { ------ Miscellaneous ------ }
+
+{ create_SLAC_dungeon - creates a new dungeon, initializes the log and tells the game to draw it
+
+  Parameters
+    floor - the dungeon floor to generate
+    direction - whether the player is coming from the level above or below
+}
 procedure create_SLAC_dungeon(floor: Integer; direction: Integer);
 var
    s, s2: String;

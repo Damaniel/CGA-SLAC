@@ -76,6 +76,11 @@ procedure clear_inventory;
 
 implementation
 
+{ is_weapon - determines whether the specified item is a weapon
+
+  Parameters
+    i: the item to check
+}
 function is_weapon(var i: SLACItem) : Boolean;
 begin
     if i.item_class = SLAC_WEAPON_TYPE then
@@ -87,6 +92,11 @@ begin
     end;
 end;
 
+{ is_armor - determines whether the specified item is armor
+
+  Parameters
+    i: the item to check
+}
 function is_armor(var i: SLACItem) : Boolean;
 begin
     if i.item_class = SLAC_ARMOR_TYPE then
@@ -98,6 +108,11 @@ begin
     end;
 end;
 
+{ is_equippable - determines whether the specified item can be equipped
+
+  Parameters
+    i: the item to check
+}
 function is_equippable(var i: SLACItem) : Boolean;
 begin
     if (is_armor(i)) or (is_weapon(i)) then
@@ -128,6 +143,14 @@ begin
     end;
 end;
 
+{ get_sprite_index - retreives the sprite associated with the specified item
+
+  Parameters
+    i: the item to get the sprite for
+
+  Returns
+    The sprite index, or -1 (NOTHING) if there isn't one
+}
 function get_sprite_index(var i: SLACItem) : Integer;
 var
     item_type: Integer;
@@ -141,6 +164,11 @@ begin
     end;
 end;
 
+{ get_first_available_item_list_slot - finds the first open slot in the dungeon item list
+
+  Returns
+    the index of the first open slot, or -1 if all slots are full
+}
 function get_first_available_item_list_slot : Integer;
 var
     idx: Integer;
@@ -157,7 +185,12 @@ begin
     end;
 end;
 
-function get_first_available_inventory_slot :  Integer;
+{ get_first_available_inventory_slot - finds the first open slot in the player's inventory
+
+  Returns
+    the index of the first open slot, or -1 if all slots are full
+}
+function get_first_available_inventory_slot : Integer;
 var
     idx: Integer;
 begin
@@ -173,6 +206,12 @@ begin
     end;
 end;
 
+{ copy_item_to_item - does a deep copy from one item instance to another
+
+  Parameters
+    var s_it - the source item
+    var d_it - the destination item
+}
 procedure copy_item_to_item(var s_it: SLACItem; var d_it: SLACItem);
 begin
     d_it.item_class := s_it.item_class;
@@ -180,8 +219,15 @@ begin
     d_it.plus_mod := s_it.plus_mod;
     d_it.amount := s_it.amount;
     d_it.identified := s_it.identified;
+    d_it.equipped := s_it.equipped;
 end;
 
+{ add_new_to_item_list_at - adds an item to the dungeon item list
+
+  Parameters
+    idx - the offset into the dungeon item list
+    it - the item to add
+}
 procedure add_new_to_item_list_at(idx: Integer; var it: SLACItem);
 begin
     if (idx >= 0) and (idx <= MAX_DUNGEON_ITEMS - 1) then
@@ -193,6 +239,12 @@ begin
     end;
 end;
 
+{ add_new_to_inventory_at - adds an item to the player's inventory list
+
+  Parameters
+    idx - the offset into the inventory list
+    it - the item to add
+}
 procedure add_new_to_inventory_at(idx: Integer; var it: SLACItem);
 begin
     if (idx >=0) and (idx <= MAX_INVENTORY_SIZE - 1) then
@@ -206,6 +258,11 @@ begin
     end;
 end;
 
+{ clear_item - initializes an item by zeroing out the fields
+
+  Parameters
+    i - the item to initialize
+}
 procedure clear_item(var i: SLACItem);
 begin
     i.item_class := SLAC_NO_TYPE;
@@ -213,8 +270,14 @@ begin
     i.plus_mod := 0;
     i.amount := 0;
     i.identified := False;
+    i.equipped := False;
 end;
 
+{ delete_item_list_item_at - removes an item from the specified dungeon item list slot
+
+  Parameters:
+    slot - the slot that contains the item to delete
+}
 procedure delete_item_list_item_at(slot: Integer);
 begin
     if (slot > 0) and (slot <= MAX_DUNGEON_ITEMS - 1) then
@@ -223,6 +286,11 @@ begin
     end;
 end;
 
+{ delete_inventory_item_at - removes an item from the specified inventory slot
+
+  Parameters:
+    slot - the slot that contains the item to delete
+}
 procedure delete_inventory_item_at(slot: Integer);
 begin
     if (slot >= 0) and (slot <= MAX_INVENTORY_SIZE - 1) then
@@ -233,6 +301,7 @@ begin
     end;
 end;
 
+{ clear_item_list - removes all items from the dungeon item list }
 procedure clear_item_list;
 var
     idx: Integer;
@@ -243,6 +312,7 @@ begin
     end;
 end;
 
+{ clear_inventory - removes all items from the player's inventory }
 procedure clear_inventory;
 var
     idx: Integer;
@@ -257,6 +327,14 @@ begin
     g_inventory_pos_components.page := 0;
 end;
 
+{ is_item_list_slot_empty - returns whether an item is present in the specified dungeon item list slot
+
+  Parameters
+    slot - the slot to check
+
+  Returns
+    True if the slot is empty, False otherwise
+}
 function is_item_list_slot_empty(slot: Integer) : Boolean;
 begin
     { If the index is out of range, it's 'technically' empty... }
@@ -274,6 +352,14 @@ begin
     end;
 end;
 
+{ is_inventory_slot_empty - returns whether an item is present in the specified inventory slot
+
+  Parameters
+    slot - the slot to check
+
+  Returns
+    True if the slot is empty, False otherwise
+}
 function is_inventory_slot_empty(slot: Integer) : Boolean;
 begin
     { If the index is out of range, it's 'technically' empty... }
@@ -291,6 +377,15 @@ begin
     end;
 end;
 
+{ get_item_name - gets the base name of an item based on the type (weapon, armor, item) it is
+
+  Parameters
+    item_class - the item type (item, weapon, armor)
+    idx - the offset into the global item table for the item type
+
+  Returns
+    The name of the item, or an empty string otherwise
+}
 function get_item_name(item_class: Integer; idx: Integer) : String;
 begin
     case item_class of
@@ -302,6 +397,7 @@ begin
     end;
 end;
 
+{ dump_inventory - shows the full contents of the inventory}
 procedure dump_inventory;
 var
     idx: Integer;

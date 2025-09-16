@@ -143,6 +143,12 @@ begin
   end;
 end;
 
+{ unequip - unequips an item by removing it from the player's equipment list
+
+  Parameters
+    equip_index - the equipment slot to unequip
+    was_removed - True if the item was actually unequipped, False otherwise (currently unused)
+}
 procedure SLACPlayer.unequip(equip_index: Integer; var was_removed: Boolean);
 begin
   g_inventory[equipment[equip_index]].item.equipped := False;
@@ -150,6 +156,11 @@ begin
   recalculate_stats;
 end;
 
+{ recalculate_stats - adds up all of the stat adjustments provided by the player's level and gear
+
+  This procedure is used after equipping/unequipping items, using items that modify stats,
+  or leveling up, to ensure that stats always reflect the actual state of the player.
+}
 procedure SLACPlayer.recalculate_stats;
 var
   idx: Integer;

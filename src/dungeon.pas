@@ -554,7 +554,12 @@ begin
    end;
 end;
 
+{ generate - generate a complete dungeon, including items, enemies and layout
 
+  Parameters
+   gen - the underlying DungeonGenerator that created the initial layout
+   direction - is the player coming from the floor above or below?
+}
 procedure SLACDungeon.generate(gen: PDungeonGenerator; direction: Integer);
 var
    idx: Integer;
@@ -595,6 +600,11 @@ begin
    squares[x][y].item_list_idx := NO_ITEM;
 end;
 
+{ generate_initial_enemies - populates the dungeon with a set of floor-appropriate enemies
+
+  Parameters:
+   count - the number of enemies to generate
+}
 procedure SLACDungeon.generate_initial_enemies(count: Integer);
 var
    legal_location: Boolean;
@@ -642,6 +652,11 @@ begin
    end;
 end;
 
+{ generate_initial_items - populates the dungeon with a set of floor-appropriate items
+
+  Parameters:
+   count - the number of items to generate
+}
 procedure SLACDungeon.generate_initial_items(count: Integer);
 var
    it: SLACItem;
@@ -1222,6 +1237,13 @@ begin
 
 end;
 
+{ get_room_extents - gets the x and y positions of the upper left and bottom right corners of a room
+
+  Parameters
+   x, y: the position of a location in a room
+   var x1, y1: the upper left square of the room
+   var x2, y2: the lower right square of the room
+}
 procedure SLACDungeon.get_room_extents(x: Byte; y: Byte; var x1: Byte; var y1: Byte; var x2: Byte; var y2: Byte);
 var
    lx, ty, rx, by: Byte;
@@ -1263,6 +1285,12 @@ begin
    end;
 end;
 
+{ get_ground_item_name - gets the name of the item (if any) on the ground at the specified location
+
+  Parameters
+   x, y: the location that has the item
+   var name: the name of the item in that location, or '' if no item is there
+}
 procedure SLACDungeon.get_ground_item_name(x: Integer; y: Integer; var name: String);
 var
    gi: SLACItem;
@@ -1284,6 +1312,11 @@ begin
    end;
 end;
 
+{ pick_up_from_ground - transfers an item from the ground to the player's inventory
+
+  Parameters:
+   x, y - the location of the item on the ground
+}
 procedure SLACDungeon.pick_up_from_ground(x: Integer; y: Integer);
 var
    target_slot: Integer;

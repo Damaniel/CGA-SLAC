@@ -37,6 +37,11 @@ procedure clear_enemy_list;
 
 implementation
 
+{ get_first_available_enemy_slot - gets the first empty enemy list slot
+
+  Returns
+    The first empty slot, or -1 if there aren't any
+}
 function get_first_available_enemy_slot : Integer;
 var
     idx: Integer;
@@ -59,6 +64,14 @@ begin
     end;
 end;
 
+{ is_valid_enemy - checks to see if an enemy is present in the specified location in the enemy list
+
+  Parameters
+    index: the slot of the enemy list to check
+
+  Returns
+    True if there's an enemy in the slot, False otherwise
+}
 function is_valid_enemy(index: Integer) : Boolean;
 begin
     if g_enemy_list[index].enemy_idx = NO_ENEMY then
@@ -70,11 +83,22 @@ begin
     end;
 end;
 
+{ get_enemy_data - returns data about the enemy in the specified enemy list slot
+
+  Parameters
+    index: the slot of the enemy list to get information about
+    var s: the enemy information
+}
 procedure get_enemy_data(index: Integer; var s: SLACEnemy);
 begin
     s := g_enemy_list[index];
 end;
 
+{ delete_enemy_at - removes an enemy from the enemy list
+
+  Parameters
+    index - the slot containing the enemy to delete
+}
 procedure delete_enemy_at(index: Integer);
 begin
     g_enemy_list[index].enemy_idx := NO_ENEMY;
@@ -82,6 +106,12 @@ begin
     g_enemy_list[index].is_alive := False;
 end;
 
+{ add_new_enemy_at - puts an enemy in the specified enemy list slot
+
+  Parameters
+    index - the slot that the enemy will be added to
+    enemy_uid - the type of enemy to add to the list
+}
 procedure add_new_enemy_at(index: Integer; enemy_uid: Integer);
 begin
     g_enemy_list[index].enemy_idx := enemy_uid;
@@ -89,6 +119,7 @@ begin
     g_enemy_list[index].is_alive := True;
 end;
 
+{ clear_enemy_list - removes all enemies from the enemy list }
 procedure clear_enemy_list;
 var
     idx: Integer;

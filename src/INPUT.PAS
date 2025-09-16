@@ -28,10 +28,22 @@ var
 
 implementation
 
+{ process_title_state_input - performs inventory actions for the title screen state
+
+  Parameters
+    key_read - the key that was pressed
+    extended_key - was the pressed key a 'special' key?
+}
 procedure process_title_state_input(key_read: char; extended_key: Boolean);
 begin
 end;
 
+{ process_game_state_input - performs inventory actions for the in-game state
+
+  Parameters
+    key_read - the key that was pressed
+    extended_key - was the pressed key a 'special' key?
+}
 procedure process_game_state_input(key_read: char; extended_key: Boolean);
 var
     x, y: Byte;
@@ -148,6 +160,12 @@ begin
     end;
 end;
 
+{ process_inventory_input - performs inventory actions for the inventory substate
+
+  Parameters
+    key_read - the key that was pressed
+    extended_key - was the pressed key a 'special' key?
+}
 procedure process_inventory_input(key_read: Char; extended_key: Boolean);
 var
     index: Integer;
