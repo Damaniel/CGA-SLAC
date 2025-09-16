@@ -114,7 +114,7 @@ begin
       { If an armor, determine the type and equip it to the proper slot }
       else begin
         slot := NOTHING;
-        case g_item_data[g_inventory[inv_index].item.item_idx].item_class of
+        case equip_type of
           ARMOR_SHIELD: slot := EQUIP_SLOT_SHIELD;
           ARMOR_HELM: slot := EQUIP_SLOT_HEAD;
           ARMOR_CHEST: slot := EQUIP_SLOT_CHEST;
@@ -165,6 +165,7 @@ procedure SLACPlayer.recalculate_stats;
 var
   idx: Integer;
   it:  SLACItem;
+  stat_boost: Integer;
 begin
   { set all the base stats }
   hp := get_base_hp(level);
@@ -179,6 +180,14 @@ begin
     it := g_inventory[equipment[EQUIP_SLOT_WEAPON]].item;
     atk := atk + g_weapon_data[it.item_idx].atk;
     spd := spd + g_weapon_data[it.item_idx].spd;
+
+    { If the weapon has a plus mod, then add 20% of the base attack for each + on the
+      weapon (adding between 20 and 100% additional attack) }
+      if it.plus_mod > 0 then
+      begin
+        stat_boost := (((g_weapon_data[it.item_idx].atk div 10) + 1) * it.plus_mod);
+        atk := atk + stat_boost;
+      end;
   end;
 
   for idx := EQUIP_SLOT_SHIELD to NUM_EQUIP_SLOTS -1 do begin
@@ -189,6 +198,30 @@ begin
       spd := spd + g_armor_data[it.item_idx].spd;
       atk := atk + g_armor_data[it.item_idx].atk;
       luck := luck + g_armor_data[it.item_idx].luck;
+
+      { For rings, apply the plus mod to all possible stats.  Mods with zero value on
+        a stat will also have zero value in the +x form.  Note that the formula used
+        to calculate the boost for rings is different than for other types - a +1 mod
+        on other armors or weapons will add at least 1 DEF or ATK to the player's stats,
+        but a ring can (and will) add 0 to multiple stats}
+      if it.plus_mod > 0 then
+      begin
+        if it.item_class = ARMOR_RING then
+        begin
+          stat_boost := ((g_armor_data[it.item_idx].atk div 10) * it.plus_mod);
+          atk := atk + stat_boost;
+          stat_boost := ((g_armor_data[it.item_idx].def div 10) * it.plus_mod);
+          def := def + stat_boost;
+          stat_boost := ((g_armor_data[it.item_idx].spd div 10) * it.plus_mod);
+          spd := spd + stat_boost;
+          stat_boost := ((g_armor_data[it.item_idx].luck div 10) * it.plus_mod);
+          luck := luck + stat_boost;
+        end
+        else begin
+          stat_boost := (((g_armor_data[it.item_idx].def div 10) + 1) * it.plus_mod);
+          def := def + stat_boost;
+        end;
+      end;
     end;
   end;
 
