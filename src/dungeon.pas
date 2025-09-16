@@ -142,7 +142,7 @@ SLACDungeon=object
                                  var room_x: Integer; var room_y: Integer);
    procedure carve_between_regions(src_region: Integer; dest_region: Integer; gen: PDungeonGenerator);
    procedure carve_between_xy(x1: Integer; y1: Integer; x2: Integer; y2: Integer);
-
+   procedure get_ground_item_name(x: Integer; y: Integer; var name: String);
    procedure pick_up_from_ground(x: Integer; y: Integer);
 end;
 
@@ -1260,6 +1260,27 @@ begin
          by := by + 1;
       end;
       y2 := by;
+   end;
+end;
+
+procedure SLACDungeon.get_ground_item_name(x: Integer; y: Integer; var name: String);
+var
+   gi: SLACItem;
+   s: String;
+begin
+   if squares[x][y].item_list_idx <> NO_ITEM then
+   begin
+      gi := g_item_list[squares[x][y].item_list_idx];
+      name := get_item_name(gi.item_class, gi.item_idx);
+      if gi.plus_mod > 0 then
+      begin
+         name := name + ' (+';
+         Str(gi.plus_mod, s);
+         name := name + s + ')';
+      end;
+   end
+   else begin
+      name := '';
    end;
 end;
 

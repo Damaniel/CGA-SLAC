@@ -37,6 +37,7 @@ var
     x, y: Byte;
     sq: Byte;
     moved: Boolean;
+    name: String;
 begin
     if g_substate = SUBSTATE_GAME_INVENTORY then
     begin
@@ -136,6 +137,12 @@ begin
         end;
 
         if moved = True then begin
+            { Check to see if an item is at the player's feet.  If so, put a message in the log}
+            g_dungeon.get_ground_item_name(g_dungeon.player_x, g_dungeon.player_y, name);
+            if name <> '' then
+            begin
+                append_text_to_log('IT''S ' + name + '.');
+            end;
             g_render_components.render_dungeon := True;
         end;
     end;
