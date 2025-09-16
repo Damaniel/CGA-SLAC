@@ -443,6 +443,12 @@ begin
         g_render_components.render_inventory_highlight := False;
     end;
 
+    { If the player has updated their gear in the inventory menu, make sure the values are updated }
+    if g_render_components.render_interface_values = True then
+    begin
+        render_interface_values;
+        g_render_components.render_interface_values := False;
+    end;
 end;
 
 function get_full_inventory_item_name(idx: Integer) : String;

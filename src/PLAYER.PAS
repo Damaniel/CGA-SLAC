@@ -147,11 +147,13 @@ procedure SLACPlayer.unequip(equip_index: Integer; var was_removed: Boolean);
 begin
   g_inventory[equipment[equip_index]].item.equipped := False;
   equipment[equip_index] := NO_ITEM;
+  recalculate_stats;
 end;
 
 procedure SLACPlayer.recalculate_stats;
 var
   idx: Integer;
+  it:  SLACItem;
 begin
   { set all the base stats }
   hp := get_base_hp(level);
@@ -163,15 +165,25 @@ begin
   { Add up all of the mods for the equipped items }
   if equipment[EQUIP_SLOT_WEAPON] <> NO_ITEM then
   begin
-
+    it := g_inventory[equipment[EQUIP_SLOT_WEAPON]].item;
+    atk := atk + g_weapon_data[it.item_idx].atk;
+    spd := spd + g_weapon_data[it.item_idx].spd;
   end;
 
   for idx := EQUIP_SLOT_SHIELD to NUM_EQUIP_SLOTS -1 do begin
-
+    if equipment[idx] <> NO_ITEM then
+    begin
+      it := g_inventory[equipment[idx]].item;
+      def := def + g_armor_data[it.item_idx].def;
+      spd := spd + g_armor_data[it.item_idx].spd;
+      atk := atk + g_armor_data[it.item_idx].atk;
+      luck := luck + g_armor_data[it.item_idx].luck;
+    end;
   end;
 
   { TODO: add up the temporary effects from potions }
 
+  g_render_components.render_interface_values := True;
 end;
 
 { get_base_hp - returns the base HP value for the specified player level.
