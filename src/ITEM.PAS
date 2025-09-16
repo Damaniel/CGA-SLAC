@@ -33,6 +33,8 @@ SLACItem=record
     plus_mod: Byte;
     amount: Integer;
     identified: Boolean;
+    equipped: Boolean;      { Used mainly to help mark an item in the inventory with a E
+                              so we don't have to parse the whole inventory to find the equipped items. }
 end;
 
 SLACInventoryItem=record
@@ -51,6 +53,10 @@ g_item_list: array[0..MAX_DUNGEON_ITEMS-1] of SLACItem;
 g_inventory: array[0..MAX_INVENTORY_SIZE-1] of SLACInventoryItem;
 g_inventory_count : Integer;
 
+function is_weapon(var i: SLACItem) : Boolean;
+function is_armor(var i: SLACItem) : Boolean;
+function is_equippable(var i: SLACItem) : Boolean;
+function get_armor_type(var i: SLACItem) : Integer;
 function get_sprite_index(var i: SLACItem): Integer;
 function get_first_available_item_list_slot : Integer;
 function get_first_available_inventory_slot : Integer;
@@ -69,6 +75,58 @@ procedure clear_item_list;
 procedure clear_inventory;
 
 implementation
+
+function is_weapon(var i: SLACItem) : Boolean;
+begin
+    if i.item_class = SLAC_WEAPON_TYPE then
+    begin
+        is_weapon := True;
+    end
+    else begin
+        is_weapon := False;
+    end;
+end;
+
+function is_armor(var i: SLACItem) : Boolean;
+begin
+    if i.item_class = SLAC_ARMOR_TYPE then
+    begin
+        is_armor := True;
+    end
+    else begin
+        is_armor := False;
+    end;
+end;
+
+function is_equippable(var i: SLACItem) : Boolean;
+begin
+    if (is_armor(i)) or (is_weapon(i)) then
+    begin
+        is_equippable := True;
+    end
+    else begin
+        is_equippable := False;
+    end;
+end;
+
+{ get_armor_type - returns the type of armor (head, chest, etc) for the specified item.
+
+  Parameters:
+    i - the item to get the type of
+
+  Returns
+    The armor type (ARMOR_SHIELD, ARMOR_CHEST, etc) or NO_ITEM if the item isn't armor.
+}
+function get_armor_type(var i: SLACItem) : Integer;
+begin
+    if i.item_class <> SLAC_ARMOR_TYPE then
+    begin
+        get_armor_type := NO_ITEM;
+    end
+    else begin
+        get_armor_type := g_armor_data[i.item_idx].item_class;
+    end;
+end;
 
 function get_sprite_index(var i: SLACItem) : Integer;
 var
@@ -99,7 +157,7 @@ begin
     end;
 end;
 
-function get_first_available_inventory_slot:  Integer;
+function get_first_available_inventory_slot :  Integer;
 var
     idx: Integer;
 begin
@@ -261,6 +319,13 @@ begin
             Writeln('<empty>')
         end
         else begin
+            if g_inventory[idx].item.equipped = True then
+            begin
+                Write('[E] ');
+            end
+            else begin
+                Write('');
+            end;
             dump_item(g_inventory[idx].item);
         end;
     end;

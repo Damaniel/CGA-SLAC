@@ -144,7 +144,10 @@ end;
 procedure process_inventory_input(key_read: Char; extended_key: Boolean);
 var
     index: Integer;
+    i: Integer;
     num_items_on_this_page: Integer;
+    was_equipped: Boolean;
+
 begin
     if (key_read = #27) or (key_read = 'i') then
     begin
@@ -177,6 +180,27 @@ begin
             end;
             g_render_components.render_inventory_highlight := True;
         end;
+    end;
+
+    if (key_read = 'e') and (extended_key = False) then
+    begin
+        { Toggle between equipped and unequipped if the item is gear }
+        index :=  (g_inventory_pos_components.page * INVENTORY_ITEMS_PER_PAGE ) + g_inventory_pos_components.index;
+        if g_inventory[index].item.equipped = True then
+        begin
+            for i := 0 to NUM_EQUIP_SLOTS - 1 do
+            begin
+                if g_player.equipment[i] = index then
+                begin
+                    g_player.unequip(i, was_equipped);
+                end;
+            end;
+        end
+        else begin
+            g_player.equip(index, was_equipped);
+        end;
+        g_render_components.render_inventory_items := True;
+        g_render_components.render_inventory_highlight := True;
     end;
 
     if (key_read = 'n') and (extended_key = False) then

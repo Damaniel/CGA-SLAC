@@ -4,7 +4,8 @@ unit Player;
 interface
 
 uses
-    Globals;
+    Globals,
+    Item;
 
 const
     PLAYER_BASE_HP = 20;
@@ -13,6 +14,13 @@ const
     PLAYER_BASE_ATTACK = 0;
     PLAYER_BASE_DEF = 0;
 
+    EQUIP_SLOT_WEAPON = 0;
+    EQUIP_SLOT_SHIELD = 1;
+    EQUIP_SLOT_HEAD = 2;
+    EQUIP_SLOT_CHEST = 3;
+    EQUIP_SLOT_FEET = 4;
+    EQUIP_SLOT_RING = 5;
+    NUM_EQUIP_SLOTS = 6;
 type
 
 SLACPlayer=object
@@ -25,7 +33,11 @@ SLACPlayer=object
     def: Integer;
     spd: Integer;
     luck: Integer;
+    equipment: array[0..NUM_EQUIP_SLOTS-1] of Shortint;
     procedure Init;
+    procedure equip(inv_index: Integer; var was_equipped: Boolean);
+    procedure unequip(equip_index: Integer; var was_removed: Boolean);
+    procedure recalculate_stats;
 end;
 
 PSLACPlayer=^SLACPlayer;
@@ -44,6 +56,8 @@ function get_xp_for_next_level(cur_level: Integer) : Longint;
 implementation
 
 procedure SLACPlayer.Init;
+var
+  idx: Integer;
 begin
     level := 1;
     xp := 0;
@@ -54,6 +68,110 @@ begin
     def := get_base_defense(level);
     spd := get_base_speed(level);
     luck := get_base_luck(level);
+    for idx :=0 to NUM_EQUIP_SLOTS - 1 do
+    begin
+      equipment[idx] := NO_ITEM;
+    end;
+end;
+
+{ equip - equips the specifed item from the player's inventory
+
+  Parameters:
+    inv_index - the offset into the inventory of the player
+
+  Returns:
+    True if the item was equippable and actually equipped, False otherwise
+}
+procedure SLACPlayer.equip(inv_index: Integer; var was_equipped: Boolean);
+var
+  is_weapon_type: Boolean;
+  was_removed : Boolean;
+  equip_type: Integer;
+  slot: Integer;
+begin
+  was_equipped := False;
+
+  { Determine if the item at inv_index is a weapon or armor }
+  if is_equippable(g_inventory[inv_index].item) = True then
+  begin
+      if is_weapon(g_inventory[inv_index].item) = True then
+      begin
+        is_weapon_type := True;
+      end
+      else if is_armor(g_inventory[inv_index].item) = True then
+      begin
+        is_weapon_type := False;
+        equip_type := get_armor_type(g_inventory[inv_index].item);
+      end;
+      { If a weapon, add it to the appropriate equipment slot}
+      if is_weapon_type = True then
+      begin
+        unequip(EQUIP_SLOT_WEAPON, was_removed);
+        equipment[EQUIP_SLOT_WEAPON] := inv_index;
+        g_inventory[inv_index].item.equipped := True;
+        was_equipped := True;
+      end
+      { If an armor, determine the type and equip it to the proper slot }
+      else begin
+        slot := NOTHING;
+        case g_item_data[g_inventory[inv_index].item.item_idx].item_class of
+          ARMOR_SHIELD: slot := EQUIP_SLOT_SHIELD;
+          ARMOR_HELM: slot := EQUIP_SLOT_HEAD;
+          ARMOR_CHEST: slot := EQUIP_SLOT_CHEST;
+          ARMOR_BOOTS: slot := EQUIP_SLOT_FEET;
+          ARMOR_RING: slot := EQUIP_SLOT_RING;
+        end;
+        if slot = NOTHING then
+        begin
+          was_equipped := False;
+        end
+        else begin
+          unequip(slot, was_removed);
+          equipment[slot] := inv_index;
+          g_inventory[inv_index].item.equipped := True;
+          was_equipped := True;
+        end;
+      end;
+  end
+  else begin
+    was_equipped := False;
+  end;
+
+  if was_equipped = True then
+  begin
+    recalculate_stats;
+  end;
+end;
+
+procedure SLACPlayer.unequip(equip_index: Integer; var was_removed: Boolean);
+begin
+  g_inventory[equipment[equip_index]].item.equipped := False;
+  equipment[equip_index] := NO_ITEM;
+end;
+
+procedure SLACPlayer.recalculate_stats;
+var
+  idx: Integer;
+begin
+  { set all the base stats }
+  hp := get_base_hp(level);
+  atk := get_base_attack(level);
+  def := get_base_defense(level);
+  spd := get_base_speed(level);
+  luck := get_base_luck(level);
+
+  { Add up all of the mods for the equipped items }
+  if equipment[EQUIP_SLOT_WEAPON] <> NO_ITEM then
+  begin
+
+  end;
+
+  for idx := EQUIP_SLOT_SHIELD to NUM_EQUIP_SLOTS -1 do begin
+
+  end;
+
+  { TODO: add up the temporary effects from potions }
+
 end;
 
 { get_base_hp - returns the base HP value for the specified player level.

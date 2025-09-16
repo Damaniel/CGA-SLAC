@@ -385,11 +385,17 @@ begin
         begin
             if (idx + start_index) < (MAX_INVENTORY_SIZE - 1) then
             begin
+                tg_bar(INV_EQUIP_X, INV_TOP_EQUIP_Y + (idx * INV_ITEM_OFFSET), INV_EQUIP_X + 6,
+                       INV_TOP_EQUIP_Y + ((idx + 1) * INV_ITEM_OFFSET), COLOR_BLUE);
                 full_name := get_full_inventory_item_name(idx + start_index);
                 g_font^.outText(INV_TOP_ITEM_X,
                                 INV_TOP_ITEM_Y + (idx * INV_ITEM_OFFSET),
                                 full_name,
                                 COLOR_WHITE);
+                if g_inventory[idx + start_index].item.equipped = True then
+                begin
+                    g_font^.outText(INV_EQUIP_X, INV_TOP_EQUIP_Y + (idx * INV_ITEM_OFFSET), 'E', COLOR_GREEN);
+                end;
             end;
         end;
         g_render_components.render_inventory_items := False;
